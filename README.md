@@ -1,3 +1,3 @@
-# aarshj.me
-# Aazhs.github.io
+# aarshj.me / Aazhs.github.io
+
 #hello
