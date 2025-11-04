@@ -12,23 +12,17 @@ body {
 }
 
 nav {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items:center;
+  gap: 20px;
 }
 
 .title1{
     font-size:xx-large;
     font-weight: bold;
     text-align: center;
-    flex-grow: 1;
     margin: 0;
-}
-
-.link{
-    position: absolute;
-    top: 30px;
-    left: 1600px;
 }
 
 .blog{
