@@ -34,13 +34,14 @@ nav {
 }
 
 .icon{
-    width: 16px;
-    height: 16px;
+    width: 12px !important;
+    height: 12px !important;
     margin-right: 5px;
     vertical-align: middle;
-    max-width: 16px;
-    max-height: 16px;
+    max-width: 12px !important;
+    max-height: 12px !important;
     display: inline-block;
+    flex-shrink: 0;
 }
 
 .blog{
