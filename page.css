@@ -33,6 +33,13 @@ nav {
     white-space: nowrap;
 }
 
+.icon{
+    width: 20px;
+    height: 20px;
+    margin-right: 8px;
+    vertical-align: middle;
+}
+
 .blog{
     border: 2px solid #333;
     padding: 20px;
