@@ -52,7 +52,11 @@ nav {
 
 .blog-image{
     border-radius: 8px;
+    max-width: 100%;
+    height: auto;
+    display: block;
 }
+
 .title{
     text-decoration: underline;
     font-size: x-large;
@@ -66,4 +70,25 @@ nav {
 
 p{
     font-size:large;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+    .blog-posts {
+        display: block;
+    }
+    
+    .blog-image {
+        max-width: 100%;
+        margin-bottom: 15px;
+    }
+    
+    nav {
+        grid-template-columns: 1fr auto;
+        gap: 10px;
+    }
+    
+    .link {
+        font-size: 0.9em;
+    }
 }
