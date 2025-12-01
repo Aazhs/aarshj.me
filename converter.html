@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Converter Pro - Aarsh's Website</title>
+    <link rel="stylesheet" href="page.css">
+    <style>
+        .converter-section {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .converter-header {
+            text-align: center;
+            padding: 30px 0;
+        }
+
+        .converter-header h2 {
+            font-size: 2em;
+            margin: 10px 0;
+            color: #333;
+        }
+
+        .converter-header p {
+            font-size: 1.1em;
+            color: #666;
+            margin: 10px 0;
+        }
+
+        /* Tabs */
+        .converter-tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 30px 0;
+            border-bottom: 2px solid #ddd;
+            padding-bottom: 10px;
+        }
+
+        .tab-btn {
+            padding: 10px 20px;
+            border: 2px solid #ccc;
+            background: #f5f5f5;
+            cursor: pointer;
+            border-radius: 4px;
+            font-size: 0.95em;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .tab-btn:hover {
+            background: #e0e0e0;
+            border-color: #999;
+        }
+
+        .tab-btn.active {
+            background: #333;
+            color: white;
+            border-color: #333;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Upload area */
+        .upload-area {
+            border: 3px dashed #333;
+            border-radius: 8px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            background: #fafafa;
+            margin: 20px 0;
+            transition: all 0.3s ease;
+        }
+
+        .upload-area:hover {
+            background: #f0f0f0;
+            border-color: #666;
+        }
+
+        .upload-area.drag-over {
+            background: #efefef;
+            border-color: #000;
+        }
+
+        .upload-area p {
+            margin: 10px 0;
+            font-size: 1em;
+        }
+
+        .upload-area input[type="file"] {
+            display: none;
+        }
+
+        /* Progress bar */
+        .progress {
+            display: none;
+            width: 100%;
+            height: 4px;
+            background: #ddd;
+            border-radius: 2px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+
+        .progress.active {
+            display: block;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: #333;
+            width: 30%;
+            animation: progress-animation 2s infinite;
+        }
+
+        @keyframes progress-animation {
+            0% { width: 10%; }
+            50% { width: 70%; }
+            100% { width: 90%; }
+        }
+
+        /* Result */
+        .result {
+            display: none;
+            margin: 20px 0;
+            padding: 20px;
+            border-radius: 4px;
+            border-left: 4px solid #333;
+        }
+
+        .result.success {
+            display: block;
+            background: #e8f5e9;
+            border-left-color: #4caf50;
+            color: #2e7d32;
+        }
+
+        .result.error {
+            display: block;
+            background: #ffebee;
+            border-left-color: #f44336;
+            color: #c62828;
+        }
+
+        .result h3 {
+            margin: 0 0 10px 0;
+        }
+
+        .result p {
+            margin: 5px 0;
+        }
+
+        .file-list {
+            margin: 15px 0;
+            padding: 10px;
+            background: white;
+            border-radius: 4px;
+        }
+
+        .file-item {
+            padding: 8px;
+            margin: 5px 0;
+            background: #f9f9f9;
+            border-radius: 2px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .download-btn {
+            background: #333;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 4px;
+            text-decoration: none;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            margin-top: 10px;
+            transition: background 0.3s;
+            display: inline-block;
+        }
+
+        .download-btn:hover {
+            background: #555;
+        }
+
+        .options {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin: 20px 0;
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 4px;
+        }
+
+        .options label {
+            font-weight: 600;
+            min-width: 100px;
+        }
+
+        .slider {
+            flex: 1;
+            height: 6px;
+            border-radius: 3px;
+            background: #ddd;
+            outline: none;
+            appearance: none;
+        }
+
+        .slider::-webkit-slider-thumb {
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #333;
+            cursor: pointer;
+        }
+
+        .slider::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #333;
+            cursor: pointer;
+            border: none;
+        }
+
+        #quality-value {
+            font-weight: 600;
+            min-width: 40px;
+            text-align: right;
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfjs-dist/3.11.174/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/3.16.0/pdf-lib.min.js"></script>
+</head>
+<body>
+    <nav>
+        <h1 class="title1">Aarsh's Homepage</h1>
+        <a class="link" href="blog.html">Blog</a>
+        <a class="link" href="about.html">About me</a>
+        <a class="link" href="converter.html">Converter</a>
+    </nav>
+
+    <div class="converter-section">
+        <div class="converter-header">
+            <h2>📄 File Converter Pro</h2>
+            <p>Convert PDF & Images Instantly (Browser-based)</p>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <div class="converter-tabs">
+            <button class="tab-btn active" data-tab="pdf-to-images">PDF → Images</button>
+            <button class="tab-btn" data-tab="image-to-pdf">Images → PDF</button>
+            <button class="tab-btn" data-tab="compress-image">Compress Image</button>
+        </div>
+
+        <!-- PDF to Images -->
+        <div class="tab-content active" id="pdf-to-images">
+            <div class="blog">
+                <h3>📄 PDF to Images</h3>
+                <p>Convert each PDF page into a separate PNG image</p>
+                <div class="upload-area" id="pdf-to-images-upload">
+                    <p>📤 Drop your PDF here or click to select</p>
+                    <input type="file" accept=".pdf" class="file-input">
+                </div>
+                <div class="progress" id="pdf-to-images-progress">
+                    <div class="progress-bar"></div>
+                </div>
+                <div class="result" id="pdf-to-images-result"></div>
+            </div>
+        </div>
+
+        <!-- Image to PDF -->
+        <div class="tab-content" id="image-to-pdf">
+            <div class="blog">
+                <h3>🖼️ Images to PDF</h3>
+                <p>Combine multiple images into a single PDF</p>
+                <div class="upload-area" id="image-to-pdf-upload">
+                    <p>📤 Drop images here or click to select (multiple files)</p>
+                    <input type="file" accept=".jpg,.jpeg,.png,.webp,.bmp" multiple class="file-input">
+                </div>
+                <div class="progress" id="image-to-pdf-progress">
+                    <div class="progress-bar"></div>
+                </div>
+                <div class="result" id="image-to-pdf-result"></div>
+            </div>
+        </div>
+
+        <!-- Compress Image -->
+        <div class="tab-content" id="compress-image">
+            <div class="blog">
+                <h3>🖼️ Compress Image</h3>
+                <p>Reduce image file size with quality control</p>
+                <div class="options">
+                    <label for="quality-slider">Quality:</label>
+                    <input type="range" id="quality-slider" min="10" max="100" value="80" class="slider">
+                    <span id="quality-value">80</span>%
+                </div>
+                <div class="upload-area" id="compress-image-upload">
+                    <p>📤 Drop your image here or click to select</p>
+                    <input type="file" accept=".jpg,.jpeg,.png,.webp,.bmp" class="file-input">
+                </div>
+                <div class="progress" id="compress-image-progress">
+                    <div class="progress-bar"></div>
+                </div>
+                <div class="result" id="compress-image-result"></div>
+            </div>
+        </div>
+
+        <div style="margin-top: 40px; padding: 20px; background: #f9f9f9; border-radius: 4px; text-align: center;">
+            <p>🔒 <strong>Privacy First:</strong> All conversions happen in your browser. No files are uploaded anywhere!</p>
+        </div>
+    </div>
+
+    <script>
+        // Set PDF.js worker
+        if (typeof pdfjsLib !== 'undefined') {
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdfjs-dist/3.11.174/pdf.worker.min.js';
+        }
+
+        // Tab switching
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const tabName = btn.getAttribute('data-tab');
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+                btn.classList.add('active');
+                document.getElementById(tabName).classList.add('active');
+            });
+        });
+
+        // Quality slider
+        const qualitySlider = document.getElementById('quality-slider');
+        const qualityValue = document.getElementById('quality-value');
+        qualitySlider.addEventListener('input', (e) => {
+            qualityValue.textContent = e.target.value;
+        });
+
+        // Upload configurations
+        const uploadConfigs = [
+            { id: 'pdf-to-images', handler: handlePDFToImages },
+            { id: 'image-to-pdf', handler: handleImagesToPDF },
+            { id: 'compress-image', handler: handleCompressImage }
+        ];
+
+        uploadConfigs.forEach(config => setupUploadArea(config.id, config.handler));
+
+        function setupUploadArea(configId, handler) {
+            const uploadArea = document.getElementById(`${configId}-upload`);
+            const fileInput = uploadArea.querySelector('.file-input');
+            const resultDiv = document.getElementById(`${configId}-result`);
+            const progressDiv = document.getElementById(`${configId}-progress`);
+
+            uploadArea.addEventListener('click', () => fileInput.click());
+
+            fileInput.addEventListener('change', (e) => {
+                const files = Array.from(e.target.files);
+                if (files.length > 0) handler(files, resultDiv, progressDiv);
+            });
+
+            uploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadArea.classList.add('drag-over');
+            });
+
+            uploadArea.addEventListener('dragleave', () => {
+                uploadArea.classList.remove('drag-over');
+            });
+
+            uploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadArea.classList.remove('drag-over');
+                const files = Array.from(e.dataTransfer.files);
+                if (files.length > 0) handler(files, resultDiv, progressDiv);
+            });
+        }
+
+        async function handlePDFToImages(files, resultDiv, progressDiv) {
+            try {
+                const file = files[0];
+                progressDiv.classList.add('active');
+                resultDiv.innerHTML = '';
+                resultDiv.className = '';
+
+                const arrayBuffer = await file.arrayBuffer();
+                const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+                const images = [];
+
+                for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+                    const page = await pdf.getPage(pageNum);
+                    const scale = 2;
+                    const viewport = page.getViewport({ scale });
+                    const canvas = document.createElement('canvas');
+                    const context = canvas.getContext('2d');
+                    canvas.width = viewport.width;
+                    canvas.height = viewport.height;
+
+                    await page.render({
+                        canvasContext: context,
+                        viewport: viewport
+                    }).promise;
+
+                    const imgData = canvas.toDataURL('image/png');
+                    images.push({
+                        name: `page_${pageNum}.png`,
+                        data: imgData
+                    });
+                }
+
+                progressDiv.classList.remove('active');
+                let html = `<h3>✅ PDF Converted! (${images.length} pages)</h3>`;
+                html += '<div class="file-list"><strong>Pages:</strong>';
+                images.forEach(img => {
+                    html += `<div class="file-item"><span>${img.name}</span><a class="download-btn" href="${img.data}" download="${img.name}">Download</a></div>`;
+                });
+                html += '</div>';
+                resultDiv.innerHTML = html;
+                resultDiv.className = 'result success';
+            } catch (error) {
+                progressDiv.classList.remove('active');
+                resultDiv.innerHTML = `<h3>❌ Error</h3><p>${error.message}</p>`;
+                resultDiv.className = 'result error';
+            }
+        }
+
+        async function handleImagesToPDF(files, resultDiv, progressDiv) {
+            try {
+                progressDiv.classList.add('active');
+                resultDiv.innerHTML = '';
+                resultDiv.className = '';
+
+                const pdfDoc = await PDFLib.PDFDocument.create();
+                
+                for (const file of files) {
+                    if (!file.type.includes('image')) continue;
+                    const buffer = await file.arrayBuffer();
+                    let image;
+
+                    if (file.type.includes('png')) {
+                        image = await pdfDoc.embedPng(buffer);
+                    } else if (file.type.includes('jpeg') || file.type.includes('jpg')) {
+                        image = await pdfDoc.embedJpg(buffer);
+                    } else {
+                        continue;
+                    }
+
+                    const { width, height } = image;
+                    const page = pdfDoc.addPage([width, height]);
+                    page.drawImage(image, { x: 0, y: 0, width, height });
+                }
+
+                const pdfBytes = await pdfDoc.save();
+                const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+                const url = URL.createObjectURL(blob);
+
+                progressDiv.classList.remove('active');
+                let html = `<h3>✅ PDF Created! (${files.length} images)</h3>`;
+                html += `<a href="${url}" class="download-btn" download="images_to_pdf.pdf">Download PDF</a>`;
+                resultDiv.innerHTML = html;
+                resultDiv.className = 'result success';
+            } catch (error) {
+                progressDiv.classList.remove('active');
+                resultDiv.innerHTML = `<h3>❌ Error</h3><p>${error.message}</p>`;
+                resultDiv.className = 'result error';
+            }
+        }
+
+        async function handleCompressImage(files, resultDiv, progressDiv) {
+            try {
+                const file = files[0];
+                progressDiv.classList.add('active');
+                resultDiv.innerHTML = '';
+                resultDiv.className = '';
+
+                const quality = parseInt(document.getElementById('quality-slider').value) / 100;
+                const buffer = await file.arrayBuffer();
+                const blob = new Blob([buffer], { type: file.type });
+
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                const img = new Image();
+                
+                img.onload = () => {
+                    canvas.width = Math.min(1920, img.width);
+                    canvas.height = Math.min(1080, img.height);
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+                    canvas.toBlob((compressedBlob) => {
+                        progressDiv.classList.remove('active');
+
+                        const originalSize = Math.round(file.size / 1024);
+                        const compressedSize = Math.round(compressedBlob.size / 1024);
+                        const reduction = Math.round((1 - compressedBlob.size / file.size) * 100);
+
+                        const url = URL.createObjectURL(compressedBlob);
+                        const ext = file.name.split('.').pop() || 'jpg';
+
+                        let html = '<h3>✅ Image Compressed!</h3>';
+                        html += `<p><strong>Original:</strong> ${originalSize} KB</p>`;
+                        html += `<p><strong>Compressed:</strong> ${compressedSize} KB</p>`;
+                        html += `<p><strong>Reduction:</strong> ${reduction}%</p>`;
+                        html += `<a href="${url}" class="download-btn" download="compressed.${ext}">Download Image</a>`;
+
+                        resultDiv.innerHTML = html;
+                        resultDiv.className = 'result success';
+                    }, file.type, quality);
+                };
+                img.src = URL.createObjectURL(blob);
+            } catch (error) {
+                progressDiv.classList.remove('active');
+                resultDiv.innerHTML = `<h3>❌ Error</h3><p>${error.message}</p>`;
+                resultDiv.className = 'result error';
+            }
+        }
+
+        document.addEventListener('dragover', (e) => e.preventDefault());
+        document.addEventListener('drop', (e) => e.preventDefault());
+    </script>
+</body>
+</html>
