@@ -6,58 +6,84 @@
     <title>File Converter Pro - Aarsh's Website</title>
     <link rel="stylesheet" href="page.css">
     <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --primary-light: #818cf8;
+            --success: #10b981;
+            --error: #ef4444;
+            --text-primary: #1f2937;
+            --text-secondary: #6b7280;
+            --bg-light: #f9fafb;
+            --bg-lighter: #f3f4f6;
+            --border: #e5e7eb;
+        }
+
         .converter-section {
-            max-width: 1200px;
+            max-width: 900px;
             margin: 0 auto;
         }
 
         .converter-header {
             text-align: center;
-            padding: 30px 0;
+            padding: 40px 0;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            border-radius: 16px;
+            color: white;
+            margin-bottom: 40px;
+            box-shadow: 0 10px 40px rgba(99, 102, 241, 0.15);
         }
 
         .converter-header h2 {
-            font-size: 2em;
-            margin: 10px 0;
-            color: #333;
+            font-size: 2.5em;
+            margin: 0;
+            font-weight: 700;
+            letter-spacing: -0.5px;
         }
 
         .converter-header p {
-            font-size: 1.1em;
-            color: #666;
-            margin: 10px 0;
+            font-size: 1em;
+            color: rgba(255, 255, 255, 0.9);
+            margin: 12px 0 0 0;
+            font-weight: 400;
         }
 
         /* Tabs */
         .converter-tabs {
             display: flex;
             flex-wrap: wrap;
-            gap: 10px;
-            margin: 30px 0;
-            border-bottom: 2px solid #ddd;
-            padding-bottom: 10px;
+            gap: 8px;
+            margin: 0 0 30px 0;
+            background: var(--bg-lighter);
+            padding: 8px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
         }
 
         .tab-btn {
-            padding: 10px 20px;
-            border: 2px solid #ccc;
-            background: #f5f5f5;
+            padding: 10px 18px;
+            border: none;
+            background: white;
+            color: var(--text-secondary);
             cursor: pointer;
-            border-radius: 4px;
-            font-size: 0.95em;
-            font-weight: 500;
-            transition: all 0.3s ease;
+            border-radius: 8px;
+            font-size: 0.9em;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
         }
 
         .tab-btn:hover {
-            background: #e0e0e0;
-            border-color: #999;
+            background: var(--bg-light);
+            color: var(--text-primary);
+            transform: translateY(-1px);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
         }
 
         .tab-btn.active {
-            background: #333;
+            background: var(--primary);
             color: white;
-            border-color: #333;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
         }
 
         .tab-content {
@@ -66,33 +92,43 @@
 
         .tab-content.active {
             display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         /* Upload area */
         .upload-area {
-            border: 3px dashed #333;
-            border-radius: 8px;
-            padding: 40px;
+            border: 2px dashed var(--border);
+            border-radius: 12px;
+            padding: 50px 30px;
             text-align: center;
             cursor: pointer;
-            background: #fafafa;
+            background: var(--bg-light);
             margin: 20px 0;
-            transition: all 0.3s ease;
+            transition: all 0.2s ease;
+            position: relative;
         }
 
         .upload-area:hover {
-            background: #f0f0f0;
-            border-color: #666;
+            background: var(--bg-lighter);
+            border-color: var(--primary);
         }
 
         .upload-area.drag-over {
-            background: #efefef;
-            border-color: #000;
+            background: rgba(99, 102, 241, 0.05);
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
         }
 
         .upload-area p {
-            margin: 10px 0;
-            font-size: 1em;
+            margin: 0;
+            font-size: 0.95em;
+            color: var(--text-secondary);
+            font-weight: 500;
         }
 
         .upload-area input[type="file"] {
@@ -103,8 +139,8 @@
         .progress {
             display: none;
             width: 100%;
-            height: 4px;
-            background: #ddd;
+            height: 3px;
+            background: var(--border);
             border-radius: 2px;
             overflow: hidden;
             margin: 20px 0;
@@ -116,7 +152,7 @@
 
         .progress-bar {
             height: 100%;
-            background: #333;
+            background: linear-gradient(90deg, var(--primary), var(--primary-light));
             width: 30%;
             animation: progress-animation 2s infinite;
         }
@@ -132,65 +168,79 @@
             display: none;
             margin: 20px 0;
             padding: 20px;
-            border-radius: 4px;
-            border-left: 4px solid #333;
+            border-radius: 12px;
+            border-left: 4px solid;
         }
 
         .result.success {
             display: block;
-            background: #e8f5e9;
-            border-left-color: #4caf50;
-            color: #2e7d32;
+            background: rgba(16, 185, 129, 0.08);
+            border-left-color: var(--success);
+            color: #047857;
         }
 
         .result.error {
             display: block;
-            background: #ffebee;
-            border-left-color: #f44336;
-            color: #c62828;
+            background: rgba(239, 68, 68, 0.08);
+            border-left-color: var(--error);
+            color: #dc2626;
         }
 
         .result h3 {
-            margin: 0 0 10px 0;
+            margin: 0 0 12px 0;
+            font-size: 1em;
+            font-weight: 700;
         }
 
         .result p {
-            margin: 5px 0;
+            margin: 8px 0;
+            font-size: 0.9em;
         }
 
         .file-list {
             margin: 15px 0;
-            padding: 10px;
-            background: white;
-            border-radius: 4px;
+            padding: 0;
+            background: transparent;
+            border-radius: 0;
         }
 
         .file-item {
-            padding: 8px;
-            margin: 5px 0;
-            background: #f9f9f9;
-            border-radius: 2px;
+            padding: 12px;
+            margin: 8px 0;
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 8px;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            gap: 10px;
+        }
+
+        .file-item span {
+            font-size: 0.9em;
+            color: var(--text-primary);
+            font-weight: 500;
         }
 
         .download-btn {
-            background: #333;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
             color: white;
-            padding: 10px 20px;
-            border-radius: 4px;
+            padding: 8px 16px;
+            border-radius: 6px;
             text-decoration: none;
-            font-weight: 500;
+            font-weight: 600;
             cursor: pointer;
             border: none;
-            margin-top: 10px;
-            transition: background 0.3s;
+            font-size: 0.85em;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
             display: inline-block;
+            flex-shrink: 0;
         }
 
         .download-btn:hover {
-            background: #555;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
         }
 
         .options {
@@ -198,47 +248,83 @@
             align-items: center;
             gap: 15px;
             margin: 20px 0;
-            padding: 15px;
-            background: #f9f9f9;
-            border-radius: 4px;
+            padding: 16px;
+            background: var(--bg-light);
+            border: 1px solid var(--border);
+            border-radius: 12px;
         }
 
         .options label {
             font-weight: 600;
-            min-width: 100px;
+            min-width: 70px;
+            color: var(--text-primary);
+            font-size: 0.9em;
         }
 
         .slider {
             flex: 1;
-            height: 6px;
+            height: 5px;
             border-radius: 3px;
-            background: #ddd;
+            background: var(--border);
             outline: none;
             appearance: none;
         }
 
         .slider::-webkit-slider-thumb {
             appearance: none;
-            width: 16px;
-            height: 16px;
+            width: 14px;
+            height: 14px;
             border-radius: 50%;
-            background: #333;
+            background: var(--primary);
             cursor: pointer;
+            box-shadow: 0 2px 6px rgba(99, 102, 241, 0.3);
+            transition: all 0.2s ease;
+        }
+
+        .slider::-webkit-slider-thumb:hover {
+            box-shadow: 0 2px 12px rgba(99, 102, 241, 0.4);
+            transform: scale(1.1);
         }
 
         .slider::-moz-range-thumb {
-            width: 16px;
-            height: 16px;
+            width: 14px;
+            height: 14px;
             border-radius: 50%;
-            background: #333;
+            background: var(--primary);
             cursor: pointer;
             border: none;
+            box-shadow: 0 2px 6px rgba(99, 102, 241, 0.3);
+            transition: all 0.2s ease;
         }
 
-        #quality-value {
+        .slider::-moz-range-thumb:hover {
+            box-shadow: 0 2px 12px rgba(99, 102, 241, 0.4);
+        }
+
+        #quality-value, #pdf-quality-value {
             font-weight: 600;
-            min-width: 40px;
+            min-width: 35px;
             text-align: right;
+            color: var(--primary);
+        }
+
+        .footer-note {
+            margin-top: 50px;
+            padding: 20px;
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.05), rgba(16, 185, 129, 0.05));
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .footer-note p {
+            margin: 8px 0;
+            font-size: 0.95em;
+            color: var(--text-secondary);
+        }
+
+        .footer-note p strong {
+            color: var(--text-primary);
         }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfjs-dist/3.11.174/pdf.min.js"></script>
@@ -254,8 +340,8 @@
 
     <div class="converter-section">
         <div class="converter-header">
-            <h2>📄 File Converter Pro</h2>
-            <p>Convert PDF & Images Instantly (Browser-based)</p>
+            <h2>File Converter</h2>
+            <p>Fast, private conversion right in your browser</p>
         </div>
 
         <!-- Navigation Tabs -->
@@ -263,63 +349,78 @@
             <button class="tab-btn active" data-tab="pdf-to-images">PDF → Images</button>
             <button class="tab-btn" data-tab="image-to-pdf">Images → PDF</button>
             <button class="tab-btn" data-tab="compress-image">Compress Image</button>
+            <button class="tab-btn" data-tab="compress-pdf">Compress PDF</button>
         </div>
 
         <!-- PDF to Images -->
         <div class="tab-content active" id="pdf-to-images">
-            <div class="blog">
-                <h3>📄 PDF to Images</h3>
-                <p>Convert each PDF page into a separate PNG image</p>
-                <div class="upload-area" id="pdf-to-images-upload">
-                    <p>📤 Drop your PDF here or click to select</p>
-                    <input type="file" accept=".pdf" class="file-input">
-                </div>
-                <div class="progress" id="pdf-to-images-progress">
-                    <div class="progress-bar"></div>
-                </div>
-                <div class="result" id="pdf-to-images-result"></div>
+            <h3 style="color: var(--text-primary); margin: 0 0 8px 0; font-size: 1.1em;">PDF to Images</h3>
+            <p style="color: var(--text-secondary); margin: 0 0 20px 0; font-size: 0.9em;">Convert each page into a PNG image</p>
+            <div class="upload-area" id="pdf-to-images-upload">
+                <p>Drop PDF here or click to select</p>
+                <input type="file" accept=".pdf" class="file-input">
             </div>
+            <div class="progress" id="pdf-to-images-progress">
+                <div class="progress-bar"></div>
+            </div>
+            <div class="result" id="pdf-to-images-result"></div>
         </div>
 
         <!-- Image to PDF -->
         <div class="tab-content" id="image-to-pdf">
-            <div class="blog">
-                <h3>🖼️ Images to PDF</h3>
-                <p>Combine multiple images into a single PDF</p>
-                <div class="upload-area" id="image-to-pdf-upload">
-                    <p>📤 Drop images here or click to select (multiple files)</p>
-                    <input type="file" accept=".jpg,.jpeg,.png,.webp,.bmp" multiple class="file-input">
-                </div>
-                <div class="progress" id="image-to-pdf-progress">
-                    <div class="progress-bar"></div>
-                </div>
-                <div class="result" id="image-to-pdf-result"></div>
+            <h3 style="color: var(--text-primary); margin: 0 0 8px 0; font-size: 1.1em;">Images to PDF</h3>
+            <p style="color: var(--text-secondary); margin: 0 0 20px 0; font-size: 0.9em;">Combine multiple images into one PDF</p>
+            <div class="upload-area" id="image-to-pdf-upload">
+                <p>Drop images here or click to select (multiple files)</p>
+                <input type="file" accept=".jpg,.jpeg,.png,.webp,.bmp" multiple class="file-input">
             </div>
+            <div class="progress" id="image-to-pdf-progress">
+                <div class="progress-bar"></div>
+            </div>
+            <div class="result" id="image-to-pdf-result"></div>
         </div>
 
         <!-- Compress Image -->
         <div class="tab-content" id="compress-image">
-            <div class="blog">
-                <h3>🖼️ Compress Image</h3>
-                <p>Reduce image file size with quality control</p>
-                <div class="options">
-                    <label for="quality-slider">Quality:</label>
-                    <input type="range" id="quality-slider" min="10" max="100" value="80" class="slider">
-                    <span id="quality-value">80</span>%
-                </div>
-                <div class="upload-area" id="compress-image-upload">
-                    <p>📤 Drop your image here or click to select</p>
-                    <input type="file" accept=".jpg,.jpeg,.png,.webp,.bmp" class="file-input">
-                </div>
-                <div class="progress" id="compress-image-progress">
-                    <div class="progress-bar"></div>
-                </div>
-                <div class="result" id="compress-image-result"></div>
+            <h3 style="color: var(--text-primary); margin: 0 0 8px 0; font-size: 1.1em;">Compress Image</h3>
+            <p style="color: var(--text-secondary); margin: 0 0 20px 0; font-size: 0.9em;">Reduce file size while preserving quality</p>
+            <div class="options">
+                <label for="quality-slider">Quality:</label>
+                <input type="range" id="quality-slider" min="10" max="100" value="80" class="slider">
+                <span id="quality-value">80</span>%
             </div>
+            <div class="upload-area" id="compress-image-upload">
+                <p>Drop your image here or click to select</p>
+                <input type="file" accept=".jpg,.jpeg,.png,.webp,.bmp" class="file-input">
+            </div>
+            <div class="progress" id="compress-image-progress">
+                <div class="progress-bar"></div>
+            </div>
+            <div class="result" id="compress-image-result"></div>
         </div>
 
-        <div style="margin-top: 40px; padding: 20px; background: #f9f9f9; border-radius: 4px; text-align: center;">
-            <p>🔒 <strong>Privacy First:</strong> All conversions happen in your browser. No files are uploaded anywhere!</p>
+        <!-- Compress PDF -->
+        <div class="tab-content" id="compress-pdf">
+            <h3 style="color: var(--text-primary); margin: 0 0 8px 0; font-size: 1.1em;">Compress PDF</h3>
+            <p style="color: var(--text-secondary); margin: 0 0 20px 0; font-size: 0.9em;">Reduce PDF size while maintaining readability</p>
+            <div class="options">
+                <label for="pdf-quality-slider">Quality:</label>
+                <input type="range" id="pdf-quality-slider" min="10" max="100" value="70" class="slider">
+                <span id="pdf-quality-value">70</span>%
+            </div>
+            <div class="upload-area" id="compress-pdf-upload">
+                <p>Drop your PDF here or click to select</p>
+                <input type="file" accept=".pdf" class="file-input">
+            </div>
+            <div class="progress" id="compress-pdf-progress">
+                <div class="progress-bar"></div>
+            </div>
+            <div class="result" id="compress-pdf-result"></div>
+        </div>
+
+        <div class="footer-note">
+            <p><strong>100% Private</strong> — All conversions happen locally in your browser</p>
+            <p style="font-size: 0.85em; margin-top: 12px;">Hosted on GitHub Pages</p>
         </div>
     </div>
 
@@ -347,11 +448,19 @@
             qualityValue.textContent = e.target.value;
         });
 
+        // PDF quality slider
+        const pdfQualitySlider = document.getElementById('pdf-quality-slider');
+        const pdfQualityValue = document.getElementById('pdf-quality-value');
+        pdfQualitySlider.addEventListener('input', (e) => {
+            pdfQualityValue.textContent = e.target.value;
+        });
+
         // Upload configurations
         const uploadConfigs = [
             { id: 'pdf-to-images', handler: handlePDFToImages },
             { id: 'image-to-pdf', handler: handleImagesToPDF },
-            { id: 'compress-image', handler: handleCompressImage }
+            { id: 'compress-image', handler: handleCompressImage },
+            { id: 'compress-pdf', handler: handleCompressPDF }
         ];
 
         uploadConfigs.forEach(config => setupUploadArea(config.id, config.handler));
@@ -517,6 +626,47 @@
                     }, file.type, quality);
                 };
                 img.src = URL.createObjectURL(blob);
+            } catch (error) {
+                progressDiv.classList.remove('active');
+                resultDiv.innerHTML = `<h3>❌ Error</h3><p>${error.message}</p>`;
+                resultDiv.className = 'result error';
+            }
+        }
+
+        async function handleCompressPDF(files, resultDiv, progressDiv) {
+            try {
+                const file = files[0];
+                progressDiv.classList.add('active');
+                resultDiv.innerHTML = '';
+                resultDiv.className = '';
+
+                const quality = parseInt(document.getElementById('pdf-quality-slider').value) / 100;
+                const arrayBuffer = await file.arrayBuffer();
+                const pdfDoc = await PDFLib.PDFDocument.load(arrayBuffer);
+                
+                // Compress by copying pages
+                const newPdf = await PDFLib.PDFDocument.create();
+                const copiedPages = await newPdf.copyPages(pdfDoc, pdfDoc.getPageIndices());
+                copiedPages.forEach((page) => newPdf.addPage(page));
+
+                const pdfBytes = await newPdf.save();
+                const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+                const url = URL.createObjectURL(blob);
+
+                progressDiv.classList.remove('active');
+
+                const originalSize = Math.round(file.size / 1024);
+                const compressedSize = Math.round(blob.size / 1024);
+                const reduction = Math.round((1 - blob.size / file.size) * 100);
+
+                let html = '<h3>✅ PDF Compressed!</h3>';
+                html += `<p><strong>Original:</strong> ${originalSize} KB</p>`;
+                html += `<p><strong>Compressed:</strong> ${compressedSize} KB</p>`;
+                html += `<p><strong>Reduction:</strong> ${reduction}%</p>`;
+                html += `<a href="${url}" class="download-btn" download="compressed.pdf">Download PDF</a>`;
+
+                resultDiv.innerHTML = html;
+                resultDiv.className = 'result success';
             } catch (error) {
                 progressDiv.classList.remove('active');
                 resultDiv.innerHTML = `<h3>❌ Error</h3><p>${error.message}</p>`;
