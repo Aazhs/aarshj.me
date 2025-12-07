@@ -62,6 +62,15 @@ export default function Home() {
         ))}
       </div>
 
+      {/* Credits */}
+      <div className="fixed bottom-4 left-0 right-0 z-30 flex justify-center">
+        <div className="glass-morphism px-6 py-3 rounded-full">
+          <p className="text-xs md:text-sm text-gray-300 text-center">
+            Made by: <span className="text-cyan-400">Aarsh Joshi</span>, <span className="text-cyan-400">Darshan Bari</span>, <span className="text-cyan-400">Samarth Hannure</span>, <span className="text-cyan-400">Homesh Ingle</span>
+          </p>
+        </div>
+      </div>
+
       <style jsx>{`
         @keyframes fadeInCard {
           to {
