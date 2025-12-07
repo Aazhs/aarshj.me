@@ -1,25 +1,343 @@
-<html>
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Aarsh's Website</title>
-    <link rel="stylesheet" href="page.css" />
-  </head>
-  <body>
-    <nav>
-      <h1 class="title1">Aarsh's Homepage</h1>
-      <a class="link" href="blog.html">Blog</a>
-      <a class="link" href="about.html">About me</a>
-    </nav>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Digital Mathscape</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+</head>
+<body>
+    <!-- Central Brain/Chip Icon -->
+    <div id="central-icon" class="central-icon">
+        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="50" cy="50" r="20" fill="none" stroke="url(#gradient)" stroke-width="2"/>
+            <circle cx="50" cy="50" r="15" fill="url(#gradient)" opacity="0.3"/>
+            <!-- Circuit lines -->
+            <line x1="30" y1="50" x2="10" y2="50" stroke="url(#gradient)" stroke-width="1.5"/>
+            <line x1="70" y1="50" x2="90" y2="50" stroke="url(#gradient)" stroke-width="1.5"/>
+            <line x1="50" y1="30" x2="50" y2="10" stroke="url(#gradient)" stroke-width="1.5"/>
+            <line x1="50" y1="70" x2="50" y2="90" stroke="url(#gradient)" stroke-width="1.5"/>
+            <circle cx="10" cy="50" r="3" fill="#00ffff"/>
+            <circle cx="90" cy="50" r="3" fill="#00ffff"/>
+            <circle cx="50" cy="10" r="3" fill="#00ffff"/>
+            <circle cx="50" cy="90" r="3" fill="#00ffff"/>
+            <defs>
+                <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" style="stop-color:#00ffff;stop-opacity:1" />
+                    <stop offset="100%" style="stop-color:#9d00ff;stop-opacity:1" />
+                </linearGradient>
+            </defs>
+        </svg>
+    </div>
 
-    <section class="blog">
-      <p>
-        This is my website. Welcome! I'm Aarsh, a passionate developer who loves to share knowledge and experiences about technology, programming, and software development.
-      </p>
-      <a class="link" href="https://www.youtube.com/watch?v=dQw4w9WgXcQ">Click This</a>
-    </section>
+    <!-- Glowing Lines -->
+    <div id="grid-lines" class="grid-lines">
+        <div class="line line-vertical"></div>
+        <div class="line line-horizontal"></div>
+    </div>
 
-    
+    <!-- Main Grid Container -->
+    <div id="grid-container" class="grid-container">
+        <!-- QR Codes Card -->
+        <div class="card" data-topic="qr">
+            <div class="card-content">
+                <div class="card-icon">
+                    <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="10" y="10" width="35" height="35" fill="currentColor" opacity="0.8"/>
+                        <rect x="55" y="10" width="35" height="35" fill="currentColor" opacity="0.8"/>
+                        <rect x="10" y="55" width="35" height="35" fill="currentColor" opacity="0.8"/>
+                        <rect x="20" y="20" width="15" height="15" fill="#0a0a1f"/>
+                        <rect x="65" y="20" width="15" height="15" fill="#0a0a1f"/>
+                        <rect x="20" y="65" width="15" height="15" fill="#0a0a1f"/>
+                        <rect class="qr-scan" x="0" y="0" width="100" height="2" fill="#00ffff" opacity="0.6"/>
+                    </svg>
+                </div>
+                <h2 class="card-title" data-text="QR Codes"></h2>
+                <p class="card-description">Error correction through Reed-Solomon codes</p>
+            </div>
+            <div class="data-stream"></div>
+        </div>
 
-  </body>
+        <!-- Computers & Trigonometry Card -->
+        <div class="card" data-topic="trig">
+            <div class="card-content">
+                <div class="card-icon">
+                    <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="20" y="30" width="60" height="40" rx="3" fill="none" stroke="currentColor" stroke-width="2"/>
+                        <rect x="25" y="35" width="50" height="25" fill="currentColor" opacity="0.3"/>
+                        <line x="1" y="1" x2="99" y2="1" stroke="currentColor" stroke-width="0.5" class="keyboard-line"/>
+                        <circle cx="50" cy="50" r="2" fill="#00ffff" class="cpu-pulse"/>
+                        <path class="sine-wave" d="M 10 50 Q 25 30, 40 50 T 70 50 T 100 50" fill="none" stroke="#9d00ff" stroke-width="1.5"/>
+                    </svg>
+                </div>
+                <h2 class="card-title" data-text="Computers & Trigonometry"></h2>
+                <p class="card-description">Taylor series approximations in CPUs</p>
+            </div>
+            <div class="data-stream"></div>
+        </div>
+
+        <!-- GPS & Triangulation Card -->
+        <div class="card" data-topic="gps">
+            <div class="card-content">
+                <div class="card-icon">
+                    <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="50" cy="50" r="30" fill="none" stroke="currentColor" stroke-width="1.5"/>
+                        <circle cx="50" cy="50" r="20" fill="none" stroke="currentColor" stroke-width="1" opacity="0.5"/>
+                        <ellipse cx="50" cy="50" rx="30" ry="10" fill="none" stroke="currentColor" stroke-width="1" opacity="0.5"/>
+                        <ellipse cx="50" cy="50" rx="10" ry="30" fill="none" stroke="currentColor" stroke-width="1" opacity="0.5"/>
+                        <circle class="satellite sat-1" cx="50" cy="20" r="3" fill="#00ffff"/>
+                        <circle class="satellite sat-2" cx="80" cy="50" r="3" fill="#00ffff"/>
+                        <circle class="satellite sat-3" cx="50" cy="80" r="3" fill="#00ffff"/>
+                        <circle cx="50" cy="50" r="4" fill="#9d00ff"/>
+                    </svg>
+                </div>
+                <h2 class="card-title" data-text="GPS & Triangulation"></h2>
+                <p class="card-description">Trilateration in 3D space</p>
+            </div>
+            <div class="data-stream"></div>
+        </div>
+
+        <!-- Noise Cancellation Card -->
+        <div class="card" data-topic="noise">
+            <div class="card-content">
+                <div class="card-icon">
+                    <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M 30 35 L 30 65 L 45 55 L 45 45 Z" fill="currentColor"/>
+                        <rect x="45" y="40" width="5" height="20" fill="currentColor"/>
+                        <path class="sound-wave wave-1" d="M 55 50 Q 60 40, 65 50 T 75 50" fill="none" stroke="#00ffff" stroke-width="1.5" opacity="0.8"/>
+                        <path class="sound-wave wave-2" d="M 55 50 Q 60 35, 65 50 T 75 50" fill="none" stroke="#00ffff" stroke-width="1.5" opacity="0.5"/>
+                        <path class="sound-wave wave-3" d="M 55 50 Q 60 30, 65 50 T 75 50" fill="none" stroke="#00ffff" stroke-width="1.5" opacity="0.3"/>
+                    </svg>
+                </div>
+                <h2 class="card-title" data-text="Noise Cancellation"></h2>
+                <p class="card-description">Destructive interference & DSP</p>
+            </div>
+            <div class="data-stream"></div>
+        </div>
+    </div>
+
+    <!-- Deep Dive Sections -->
+    <div id="deepdive-qr" class="deepdive-section">
+        <button class="close-btn">✕</button>
+        <div class="deepdive-content">
+            <h1>QR Codes: Error Correction Magic</h1>
+            
+            <div class="section">
+                <h3>Encoding Process</h3>
+                <div id="qr-encoding" class="visualization">
+                    <div class="flow-container">
+                        <div class="flow-box">
+                            <div class="input-text" id="qr-input">https://aarshj.me</div>
+                        </div>
+                        <div class="flow-arrow">→</div>
+                        <div class="flow-box generator">
+                            <div class="label">Reed-Solomon Generator</div>
+                            <div class="gears">
+                                <div class="gear gear-1">⚙</div>
+                                <div class="gear gear-2">⚙</div>
+                            </div>
+                            <div class="formula">M(x) = x⁸ + x⁴ + x³ + x² + 1</div>
+                        </div>
+                        <div class="flow-arrow">→</div>
+                        <div class="flow-box">
+                            <canvas id="qr-canvas" width="200" height="200"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>Error Correction in Action</h3>
+                <div id="qr-correction" class="visualization">
+                    <div class="correction-container">
+                        <div class="qr-pair">
+                            <div class="qr-display">
+                                <canvas id="qr-damaged" width="200" height="200"></canvas>
+                                <p>Damaged QR Code</p>
+                                <button id="damage-btn" class="action-btn">Damage QR Code</button>
+                            </div>
+                            <div class="correction-process">
+                                <div class="process-step">
+                                    <div class="step-icon">🔍</div>
+                                    <div class="step-text">Detecting errors...</div>
+                                    <div class="step-progress"><div class="progress-bar"></div></div>
+                                </div>
+                                <div class="process-step">
+                                    <div class="step-icon">🧮</div>
+                                    <div class="step-text">Reed-Solomon calculation</div>
+                                    <div class="step-progress"><div class="progress-bar"></div></div>
+                                </div>
+                                <div class="process-step">
+                                    <div class="step-icon">✨</div>
+                                    <div class="step-text">Reconstructing data</div>
+                                    <div class="step-progress"><div class="progress-bar"></div></div>
+                                </div>
+                            </div>
+                            <div class="qr-display" id="qr-corrected-container" style="opacity: 0; visibility: hidden;">
+                                <canvas id="qr-corrected" width="200" height="200"></canvas>
+                                <p>Corrected QR Code ✓</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="deepdive-trig" class="deepdive-section">
+        <button class="close-btn">✕</button>
+        <div class="deepdive-content">
+            <h1>Computers & Trigonometry</h1>
+            
+            <div class="section">
+                <h3>Taylor Series Approximation of sin(x)</h3>
+                <div id="taylor-viz" class="visualization">
+                    <canvas id="taylor-canvas" width="800" height="400"></canvas>
+                    <div class="controls">
+                        <label for="terms-slider">Number of Terms: <span id="terms-value">1</span></label>
+                        <input type="range" id="terms-slider" min="1" max="9" value="1" step="1">
+                    </div>
+                    <div id="taylor-formula" class="formula-display"></div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>Inside the CPU</h3>
+                <div id="cpu-viz" class="visualization">
+                    <div class="cpu-container">
+                        <div class="cpu-input">
+                            <div class="binary-stream" id="binary-input"></div>
+                            <p>Input (Binary)</p>
+                        </div>
+                        <div class="cpu-chip">
+                            <div class="chip-label">ALU</div>
+                            <div class="chip-glow"></div>
+                            <div class="operations">
+                                <div class="op">+ Addition</div>
+                                <div class="op">× Multiplication</div>
+                                <div class="op">÷ Division</div>
+                            </div>
+                        </div>
+                        <div class="cpu-output">
+                            <div class="result-display" id="cpu-result">sin(x) ≈ <span id="result-value">0</span></div>
+                            <p>Output</p>
+                        </div>
+                    </div>
+                    <div class="error-table">
+                        <h4>Approximation Error</h4>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Terms</th>
+                                    <th>Max Error</th>
+                                </tr>
+                            </thead>
+                            <tbody id="error-tbody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="deepdive-gps" class="deepdive-section">
+        <button class="close-btn">✕</button>
+        <div class="deepdive-content">
+            <h1>GPS & Triangulation</h1>
+            
+            <div class="section">
+                <h3>Trilateration in Action</h3>
+                <div id="gps-viz" class="visualization">
+                    <canvas id="globe-canvas" width="800" height="600"></canvas>
+                    <div class="controls">
+                        <button id="start-trilateration" class="action-btn">Start Trilateration</button>
+                        <button id="reset-trilateration" class="action-btn">Reset</button>
+                    </div>
+                    <div class="legend">
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: #ff0080;"></div>
+                            <span>Satellite 1</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: #00ff80;"></div>
+                            <span>Satellite 2</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: #ffff00;"></div>
+                            <span>Satellite 3</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: #00ffff;"></div>
+                            <span>Satellite 4 (Clock)</span>
+                        </div>
+                    </div>
+                    <div id="gps-status" class="status-text">Click "Start Trilateration" to begin</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="deepdive-noise" class="deepdive-section">
+        <button class="close-btn">✕</button>
+        <div class="deepdive-content">
+            <h1>Noise Cancellation</h1>
+            
+            <div class="section">
+                <h3>Wave Physics Laboratory</h3>
+                <div id="noise-viz" class="visualization">
+                    <div class="headphone-diagram">
+                        <svg viewBox="0 0 200 150" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M 60 50 Q 60 20, 100 20 Q 140 20, 140 50 L 140 80" fill="none" stroke="#00ffff" stroke-width="3"/>
+                            <circle cx="60" cy="90" r="25" fill="none" stroke="#00ffff" stroke-width="2"/>
+                            <circle cx="140" cy="90" r="25" fill="none" stroke="#00ffff" stroke-width="2"/>
+                            <circle cx="60" cy="90" r="20" fill="rgba(0, 255, 255, 0.1)"/>
+                            <circle cx="140" cy="90" r="20" fill="rgba(0, 255, 255, 0.1)"/>
+                            <text x="100" y="140" text-anchor="middle" fill="#00ffff" font-size="12">Headphone Cross-Section</text>
+                        </svg>
+                    </div>
+                    
+                    <div class="wave-graphs">
+                        <div class="graph-container">
+                            <h4>1. Original Noise (Engine Sound)</h4>
+                            <canvas id="noise-original" width="600" height="120"></canvas>
+                        </div>
+                        
+                        <div class="dsp-processor">
+                            <div class="dsp-chip">
+                                <span class="chip-icon">🔌</span>
+                                <span class="chip-label">DSP Chip</span>
+                                <span class="chip-icon">🔌</span>
+                            </div>
+                            <div class="processing-arrow">↓</div>
+                            <div class="process-label">Inverting Phase...</div>
+                        </div>
+                        
+                        <div class="graph-container">
+                            <h4>2. Anti-Noise (Inverted Signal)</h4>
+                            <canvas id="noise-inverted" width="600" height="120"></canvas>
+                        </div>
+                        
+                        <div class="combination-arrow">
+                            <div class="arrow-line"></div>
+                            <div class="arrow-label">Superposition</div>
+                        </div>
+                        
+                        <div class="graph-container result">
+                            <h4>3. Result: Silence ✨</h4>
+                            <canvas id="noise-result" width="600" height="120"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div class="controls">
+                        <button id="play-noise" class="action-btn">▶ Play Animation</button>
+                        <button id="stop-noise" class="action-btn">⏸ Pause</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
 </html>
