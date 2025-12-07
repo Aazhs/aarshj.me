@@ -59,7 +59,6 @@ body::before {
         radial-gradient(circle at 50% 50%, rgba(255, 0, 128, 0.05) 0%, transparent 70%);
     pointer-events: none;
     z-index: 0;
-    animation: gradientShift 15s ease infinite;
 }
 
 @keyframes gradientShift {
@@ -88,7 +87,7 @@ body::before {
     width: 100%;
     height: 100%;
     filter: drop-shadow(0 0 20px var(--neon-cyan));
-    animation: pulse 2s ease-in-out infinite;
+    will-change: filter;
 }
 
 @keyframes fadeInIcon {
@@ -173,8 +172,8 @@ body::before {
 .card {
     position: relative;
     background: linear-gradient(135deg, rgba(15, 15, 40, 0.8), rgba(10, 10, 30, 0.6));
-    backdrop-filter: blur(25px) saturate(180%);
-    -webkit-backdrop-filter: blur(25px) saturate(180%);
+    backdrop-filter: blur(10px) saturate(150%);
+    -webkit-backdrop-filter: blur(10px) saturate(150%);
     border: 1px solid rgba(255, 255, 255, 0.15);
     border-radius: 0;
     cursor: pointer;
@@ -462,8 +461,8 @@ body::before {
     width: 100%;
     height: 100%;
     background: linear-gradient(135deg, rgba(10, 10, 31, 0.98), rgba(15, 15, 45, 0.96));
-    backdrop-filter: blur(30px) saturate(150%);
-    -webkit-backdrop-filter: blur(30px) saturate(150%);
+    backdrop-filter: blur(12px) saturate(130%);
+    -webkit-backdrop-filter: blur(12px) saturate(130%);
     z-index: 100;
     display: none;
     overflow-y: auto;
@@ -1991,11 +1990,30 @@ body::before {
 
     /* Reduce glassmorphism on mobile for better performance */
     .card,
-    .deepdive-overlay,
+    .deepdive-section,
+    .section,
     .gps-controls-top > div,
     .info-box {
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(10px);
+        backdrop-filter: blur(5px);
+        -webkit-backdrop-filter: blur(5px);
+    }
+    
+    /* Disable expensive animations on mobile */
+    .qr-scan,
+    .keyboard-line,
+    .cpu-pulse,
+    .sine-wave,
+    .satellite-group,
+    .sound-wave,
+    .data-stream::before {
+        animation: none !important;
+    }
+    
+    /* Simpler shadows on mobile */
+    .card,
+    .section,
+    .info-box {
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
     }
 
     /* Larger touch targets */
