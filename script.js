@@ -4,6 +4,25 @@
 
 let currentTopic = null;
 
+// Utility: Setup canvas for high DPI displays
+function setupHighDPICanvas(canvas, width, height) {
+    const dpr = window.devicePixelRatio || 1;
+    
+    // Set display size (CSS pixels)
+    canvas.style.width = width + 'px';
+    canvas.style.height = height + 'px';
+    
+    // Set actual size in memory (scaled for DPI)
+    canvas.width = Math.floor(width * dpr);
+    canvas.height = Math.floor(height * dpr);
+    
+    // Scale all drawing operations
+    const ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+    
+    return ctx;
+}
+
 // QR Code library - using real QR code generation
 class QRCodeGenerator {
     static generate(text) {
@@ -248,156 +267,333 @@ let damagedCells = [];
 let qrCodeObjects = {}; // Store QR code instances
 
 function initQRVisualization() {
-    // Generate initial QR codes using the library
+    let currentErrorLevel = 'H';
+    let currentText = 'https://aarshj.me';
+    let qrMatrix = null;
+    let damagedCells = new Set(); // Use Set for efficient lookups
+    let damagePercentage = 0;
+    
+    // Get elements
+    const textInput = document.getElementById('qr-text-input');
+    const generateBtn = document.getElementById('generate-qr-btn');
+    const levelBtns = document.querySelectorAll('.level-btn');
     const qrCanvas = document.getElementById('qr-canvas');
     const qrDamaged = document.getElementById('qr-damaged');
     const qrCorrected = document.getElementById('qr-corrected');
+    const damageSlider = document.getElementById('damage-slider');
+    const damagePercentageSpan = document.getElementById('damage-percentage');
+    const applyDamageBtn = document.getElementById('apply-damage-btn');
+    const clearDamageBtn = document.getElementById('clear-damage-btn');
+    const correctBtn = document.getElementById('correct-btn');
+    const damagedCountSpan = document.getElementById('damaged-count');
+    const recoveryStatusSpan = document.getElementById('recovery-status');
+    const scanStatusP = document.getElementById('scan-status');
     
-    // Generate QR code directly on canvas
-    generateRealQRCode(qrCanvas, 'https://aarshj.me');
+    // Generate initial QR code
+    generateQRCode();
     
-    // Create initial QR for damaged/corrected workflow
-    setTimeout(() => {
-        // Extract matrix from the generated QR
-        qrMatrix = QRCodeGenerator.canvasToMatrix(qrCanvas);
-        QRCodeGenerator.drawQR(qrDamaged, qrMatrix);
-        QRCodeGenerator.drawQR(qrCorrected, qrMatrix);
-    }, 100);
-    
-    // Damage button
-    const damageBtn = document.getElementById('damage-btn');
-    damageBtn.addEventListener('click', damageAndCorrectQR);
-}
-
-function generateRealQRCode(canvas, text) {
-    // Clear canvas
-    const ctx = canvas.getContext('2d');
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    
-    // Create temp container for QR generation
-    const tempDiv = document.createElement('div');
-    tempDiv.style.position = 'absolute';
-    tempDiv.style.left = '-9999px';
-    document.body.appendChild(tempDiv);
-    
-    const qr = new QRCode(tempDiv, {
-        text: text,
-        width: 200,
-        height: 200,
-        colorDark: "#000000",
-        colorLight: "#ffffff",
-        correctLevel: QRCode.CorrectLevel.H
+    // Event listeners
+    textInput.addEventListener('input', (e) => {
+        currentText = e.target.value || 'Empty';
     });
     
-    // Wait for QR generation
-    setTimeout(() => {
-        const qrCanvas = tempDiv.querySelector('canvas');
-        if (qrCanvas) {
-            ctx.drawImage(qrCanvas, 0, 0, 200, 200);
+    textInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            generateQRCode();
         }
-        document.body.removeChild(tempDiv);
-    }, 50);
-}
-
-function damageAndCorrectQR() {
-    // Reset state
-    const qrCorrectedContainer = document.getElementById('qr-corrected-container');
-    qrCorrectedContainer.style.opacity = '0';
-    qrCorrectedContainer.style.visibility = 'hidden';
+    });
     
-    // Generate damaged cells
-    damagedCells = [];
-    const size = qrMatrix.length;
-    const damageCount = Math.floor(size * size * 0.15);
+    generateBtn.addEventListener('click', generateQRCode);
     
-    for (let i = 0; i < damageCount; i++) {
-        const row = Math.floor(Math.random() * size);
-        const col = Math.floor(Math.random() * size);
-        damagedCells.push([row, col]);
+    levelBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            levelBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentErrorLevel = btn.dataset.level;
+            generateQRCode();
+        });
+    });
+    
+    damageSlider.addEventListener('input', (e) => {
+        damagePercentage = parseInt(e.target.value);
+        damagePercentageSpan.textContent = damagePercentage + '%';
+    });
+    
+    applyDamageBtn.addEventListener('click', applyRandomDamage);
+    clearDamageBtn.addEventListener('click', clearAllDamage);
+    correctBtn.addEventListener('click', attemptCorrection);
+    
+    // Interactive canvas clicking
+    qrDamaged.addEventListener('click', handleQRClick);
+    qrDamaged.addEventListener('touchstart', handleQRTouch, { passive: false });
+    
+    function generateQRCode() {
+        damagedCells.clear();
+        updateDamageStats();
+        
+        // Generate QR code
+        const tempDiv = document.createElement('div');
+        tempDiv.style.position = 'absolute';
+        tempDiv.style.left = '-9999px';
+        document.body.appendChild(tempDiv);
+        
+        const errorLevels = {
+            'L': QRCode.CorrectLevel.L,
+            'M': QRCode.CorrectLevel.M,
+            'Q': QRCode.CorrectLevel.Q,
+            'H': QRCode.CorrectLevel.H
+        };
+        
+        try {
+            const qr = new QRCode(tempDiv, {
+                text: currentText,
+                width: 300,
+                height: 300,
+                colorDark: "#000000",
+                colorLight: "#ffffff",
+                correctLevel: errorLevels[currentErrorLevel]
+            });
+            
+            setTimeout(() => {
+                const qrCanvasTemp = tempDiv.querySelector('canvas');
+                if (qrCanvasTemp) {
+                    // Draw to main canvas
+                    const ctx = qrCanvas.getContext('2d');
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fillRect(0, 0, 300, 300);
+                    ctx.drawImage(qrCanvasTemp, 0, 0, 300, 300);
+                    
+                    // Extract matrix
+                    qrMatrix = QRCodeGenerator.canvasToMatrix(qrCanvasTemp);
+                    
+                    // Update info
+                    document.getElementById('qr-size-info').textContent = `Size: ${qrMatrix.length}x${qrMatrix.length}`;
+                    document.getElementById('qr-capacity-info').textContent = `Capacity: ${currentText.length} chars`;
+                    
+                    // Draw to damaged canvas (undamaged initially)
+                    drawQRWithDamage();
+                    
+                    // Clear corrected canvas
+                    const ctxCorrected = qrCorrected.getContext('2d');
+                    ctxCorrected.fillStyle = '#f0f0f0';
+                    ctxCorrected.fillRect(0, 0, 300, 300);
+                    scanStatusP.textContent = 'Awaiting correction...';
+                    scanStatusP.style.color = 'rgba(255,255,255,0.6)';
+                }
+                document.body.removeChild(tempDiv);
+            }, 100);
+        } catch (error) {
+            console.error('QR generation error:', error);
+            document.body.removeChild(tempDiv);
+        }
     }
     
-    // Draw damaged QR
-    const qrDamaged = document.getElementById('qr-damaged');
-    const damagedData = qrMatrix.map((row, i) => 
-        row.map((cell, j) => {
-            if (damagedCells.some(([r, c]) => r === i && c === j)) {
-                return 1 - cell;
-            }
-            return cell;
-        })
-    );
-    
-    QRCodeGenerator.drawDamagedQR(qrDamaged, damagedData, damagedCells);
-    
-    // Animate correction process
-    const steps = document.querySelectorAll('.process-step');
-    const progressBars = document.querySelectorAll('.progress-bar');
-    
-    steps.forEach(step => {
-        step.classList.remove('active');
-    });
-    progressBars.forEach(bar => {
-        bar.classList.remove('filling');
-        bar.style.width = '0';
-    });
-    
-    // Step 1: Detecting errors
-    setTimeout(() => {
-        steps[0].classList.add('active');
-        setTimeout(() => progressBars[0].classList.add('filling'), 100);
-    }, 200);
-    
-    // Step 2: Reed-Solomon calculation
-    setTimeout(() => {
-        steps[1].classList.add('active');
-        setTimeout(() => progressBars[1].classList.add('filling'), 100);
-    }, 1200);
-    
-    // Step 3: Reconstructing data with progressive correction
-    setTimeout(() => {
-        steps[2].classList.add('active');
-        setTimeout(() => progressBars[2].classList.add('filling'), 100);
+    function handleQRClick(e) {
+        if (!qrMatrix) return;
         
-        // Progressive correction animation
-        const qrCorrected = document.getElementById('qr-corrected');
-        let correctedCount = 0;
-        const totalDamaged = damagedCells.length;
+        const rect = qrDamaged.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
         
-        const correctionInterval = setInterval(() => {
-            correctedCount++;
-            const percentCorrected = correctedCount / totalDamaged;
+        toggleQRCell(x, y);
+    }
+    
+    function handleQRTouch(e) {
+        if (!qrMatrix) return;
+        e.preventDefault();
+        
+        const rect = qrDamaged.getBoundingClientRect();
+        const touch = e.touches[0];
+        const x = touch.clientX - rect.left;
+        const y = touch.clientY - rect.top;
+        
+        toggleQRCell(x, y);
+    }
+    
+    function toggleQRCell(x, y) {
+        
+        const size = qrMatrix.length;
+        const cellSize = 300 / size;
+        
+        const row = Math.floor(y / cellSize);
+        const col = Math.floor(x / cellSize);
+        
+        if (row >= 0 && row < size && col >= 0 && col < size) {
+            const cellKey = `${row},${col}`;
             
-            // Draw partially corrected QR
-            const partiallyCorrected = damagedData.map((row, i) => 
-                row.map((cell, j) => {
-                    const damageIndex = damagedCells.findIndex(([r, c]) => r === i && c === j);
-                    if (damageIndex !== -1 && damageIndex < correctedCount) {
-                        // This cell has been corrected
-                        return qrMatrix[i][j];
+            if (damagedCells.has(cellKey)) {
+                damagedCells.delete(cellKey);
+            } else {
+                damagedCells.add(cellKey);
+            }
+            
+            drawQRWithDamage();
+            updateDamageStats();
+        }
+    }
+    
+    function applyRandomDamage() {
+        if (!qrMatrix) return;
+        
+        damagedCells.clear();
+        const size = qrMatrix.length;
+        const totalCells = size * size;
+        const damageCount = Math.floor(totalCells * (damagePercentage / 100));
+        
+        while (damagedCells.size < damageCount) {
+            const row = Math.floor(Math.random() * size);
+            const col = Math.floor(Math.random() * size);
+            damagedCells.add(`${row},${col}`);
+        }
+        
+        drawQRWithDamage();
+        updateDamageStats();
+    }
+    
+    function clearAllDamage() {
+        damagedCells.clear();
+        drawQRWithDamage();
+        updateDamageStats();
+        
+        // Clear corrected canvas
+        const ctxCorrected = qrCorrected.getContext('2d');
+        ctxCorrected.fillStyle = '#f0f0f0';
+        ctxCorrected.fillRect(0, 0, 300, 300);
+        scanStatusP.textContent = 'Awaiting correction...';
+        scanStatusP.style.color = 'rgba(255,255,255,0.6)';
+    }
+    
+    function drawQRWithDamage() {
+        if (!qrMatrix) return;
+        
+        const ctx = qrDamaged.getContext('2d');
+        const size = qrMatrix.length;
+        const cellSize = 300 / size;
+        
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, 300, 300);
+        
+        for (let i = 0; i < size; i++) {
+            for (let j = 0; j < size; j++) {
+                const cellKey = `${i},${j}`;
+                const isDamaged = damagedCells.has(cellKey);
+                
+                let fillColor;
+                if (isDamaged) {
+                    // Damaged cells shown in red
+                    fillColor = qrMatrix[i][j] === 1 ? '#ff0080' : '#ffccdd';
+                } else {
+                    fillColor = qrMatrix[i][j] === 1 ? '#000000' : '#ffffff';
+                }
+                
+                ctx.fillStyle = fillColor;
+                ctx.fillRect(j * cellSize, i * cellSize, cellSize, cellSize);
+            }
+        }
+    }
+    
+    function updateDamageStats() {
+        const count = damagedCells.size;
+        damagedCountSpan.textContent = count;
+        
+        if (!qrMatrix) {
+            recoveryStatusSpan.textContent = 'N/A';
+            return;
+        }
+        
+        const size = qrMatrix.length;
+        const totalCells = size * size;
+        const damagePercent = (count / totalCells) * 100;
+        
+        const maxRecovery = {
+            'L': 7,
+            'M': 15,
+            'Q': 25,
+            'H': 30
+        }[currentErrorLevel];
+        
+        if (damagePercent === 0) {
+            recoveryStatusSpan.textContent = 'Perfect';
+            recoveryStatusSpan.style.color = '#00ffff';
+        } else if (damagePercent <= maxRecovery) {
+            recoveryStatusSpan.textContent = 'Recoverable';
+            recoveryStatusSpan.style.color = '#00ff80';
+        } else if (damagePercent <= maxRecovery * 1.5) {
+            recoveryStatusSpan.textContent = 'Marginal';
+            recoveryStatusSpan.style.color = '#ffaa00';
+        } else {
+            recoveryStatusSpan.textContent = 'Unrecoverable';
+            recoveryStatusSpan.style.color = '#ff0080';
+        }
+    }
+    
+    function attemptCorrection() {
+        if (!qrMatrix) return;
+        
+        correctBtn.disabled = true;
+        correctBtn.textContent = '⏳ Correcting...';
+        scanStatusP.textContent = 'Running Reed-Solomon algorithm...';
+        scanStatusP.style.color = '#ffaa00';
+        
+        // Simulate correction process
+        setTimeout(() => {
+            // Generate fresh QR code as "corrected" version
+            const tempDiv = document.createElement('div');
+            tempDiv.style.position = 'absolute';
+            tempDiv.style.left = '-9999px';
+            document.body.appendChild(tempDiv);
+            
+            const errorLevels = {
+                'L': QRCode.CorrectLevel.L,
+                'M': QRCode.CorrectLevel.M,
+                'Q': QRCode.CorrectLevel.Q,
+                'H': QRCode.CorrectLevel.H
+            };
+            
+            const qr = new QRCode(tempDiv, {
+                text: currentText,
+                width: 300,
+                height: 300,
+                colorDark: "#000000",
+                colorLight: "#ffffff",
+                correctLevel: errorLevels[currentErrorLevel]
+            });
+            
+            setTimeout(() => {
+                const qrCanvasTemp = tempDiv.querySelector('canvas');
+                if (qrCanvasTemp) {
+                    const ctx = qrCorrected.getContext('2d');
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fillRect(0, 0, 300, 300);
+                    ctx.drawImage(qrCanvasTemp, 0, 0, 300, 300);
+                    
+                    // Determine success
+                    const size = qrMatrix.length;
+                    const totalCells = size * size;
+                    const damagePercent = (damagedCells.size / totalCells) * 100;
+                    const maxRecovery = {
+                        'L': 7, 'M': 15, 'Q': 25, 'H': 30
+                    }[currentErrorLevel];
+                    
+                    if (damagePercent <= maxRecovery) {
+                        scanStatusP.textContent = '✅ Recovery Successful! QR code is scannable.';
+                        scanStatusP.style.color = '#00ff80';
+                    } else {
+                        scanStatusP.textContent = '⚠️ Too much damage. Recovery failed.';
+                        scanStatusP.style.color = '#ff0080';
+                        
+                        // Show corrupted version
+                        ctx.fillStyle = 'rgba(255, 0, 128, 0.2)';
+                        ctx.fillRect(0, 0, 300, 300);
                     }
-                    return cell;
-                })
-            );
-            
-            // Find remaining damaged cells
-            const remainingDamaged = damagedCells.slice(correctedCount);
-            QRCodeGenerator.drawDamagedQR(qrDamaged, partiallyCorrected, remainingDamaged);
-            
-            if (correctedCount >= totalDamaged) {
-                clearInterval(correctionInterval);
-                // Show final corrected QR - generate a fresh scannable QR code
-                setTimeout(() => {
-                    generateRealQRCode(qrCorrected, 'https://aarshj.me');
-                    setTimeout(() => {
-                        qrCorrectedContainer.style.transition = 'all 0.5s ease';
-                        qrCorrectedContainer.style.opacity = '1';
-                        qrCorrectedContainer.style.visibility = 'visible';
-                    }, 100);
-                }, 200);
-            }
-        }, 50);
-    }, 2200);
+                }
+                document.body.removeChild(tempDiv);
+                
+                correctBtn.disabled = false;
+                correctBtn.textContent = '✨ Attempt Recovery';
+            }, 100);
+        }, 1500);
+    }
 }
 
 // ============================================
@@ -634,27 +830,109 @@ function updateErrorTable(tbody, maxTerms) {
 
 let gpsAnimationFrame = null;
 let gpsAnimationState = 'idle';
+let showSpheres = false;
+let satelliteSphereStates = [false, false, false, false]; // Individual sphere visibility
+let draggingObject = null;
+let satellites = [];
+let receiverPos = null;
+let earthCenter = null;
+let earthRadius = 0;
 
 function initGPSVisualization() {
     const canvas = document.getElementById('globe-canvas');
-    const startBtn = document.getElementById('start-trilateration');
+    const showSpheresBtn = document.getElementById('show-spheres');
+    const autoLocateBtn = document.getElementById('auto-locate');
+    const randomizeBtn = document.getElementById('randomize-satellites');
     const resetBtn = document.getElementById('reset-trilateration');
     
     // Resize canvas for mobile
     resizeGlobeCanvas();
     window.addEventListener('resize', resizeGlobeCanvas);
     
-    drawGlobe(canvas);
+    initializeGPSObjects(canvas);
+    drawGPSScene(canvas);
     
-    startBtn.addEventListener('click', startTrilateration);
-    resetBtn.addEventListener('click', () => {
-        gpsAnimationState = 'idle';
-        if (gpsAnimationFrame) {
-            cancelAnimationFrame(gpsAnimationFrame);
+    // Mouse/touch interaction
+    canvas.addEventListener('mousedown', handleGPSMouseDown);
+    canvas.addEventListener('mousemove', handleGPSMouseMove);
+    canvas.addEventListener('mouseup', handleGPSMouseUp);
+    canvas.addEventListener('touchstart', handleGPSTouchStart);
+    canvas.addEventListener('touchmove', handleGPSTouchMove);
+    canvas.addEventListener('touchend', handleGPSMouseUp);
+    
+    showSpheresBtn.addEventListener('click', () => {
+        showSpheres = !showSpheres;
+        if (showSpheres) {
+            // Turn on all spheres
+            satelliteSphereStates = [true, true, true, true];
+        } else {
+            // Turn off all spheres
+            satelliteSphereStates = [false, false, false, false];
         }
-        drawGlobe(canvas);
-        document.getElementById('gps-status').textContent = 'Click "Start Trilateration" to begin';
+        showSpheresBtn.textContent = showSpheres ? '🌐 Hide Distance Spheres' : '🌐 Show Distance Spheres';
+        drawGPSScene(canvas);
     });
+    
+    autoLocateBtn.addEventListener('click', () => {
+        animateAutoLocate(canvas);
+    });
+    
+    randomizeBtn.addEventListener('click', () => {
+        randomizeSatellites(canvas);
+    });
+    
+    resetBtn.addEventListener('click', () => {
+        showSpheres = false;
+        satelliteSphereStates = [false, false, false, false];
+        showSpheresBtn.textContent = '🌐 Show Distance Spheres';
+        initializeGPSObjects(canvas);
+        drawGPSScene(canvas);
+        document.getElementById('position-status').textContent = 'Drag receiver to see distances';
+    });
+}
+
+function initializeGPSObjects(canvas) {
+    const width = canvas.width;
+    const height = canvas.height;
+    const centerX = width / 2;
+    const centerY = height / 2;
+    const radius = Math.min(width, height) * 0.22;
+    
+    earthCenter = { x: centerX, y: centerY };
+    earthRadius = radius;
+    
+    // Initialize satellites in orbit positions
+    satellites = [
+        { x: centerX + radius * 2.2, y: centerY - radius * 1.3, color: '#ff0080', dragging: false },
+        { x: centerX - radius * 1.8, y: centerY - radius * 1.6, color: '#00ff80', dragging: false },
+        { x: centerX + radius * 0.8, y: centerY + radius * 2.3, color: '#ffaa00', dragging: false },
+        { x: centerX - radius * 2.1, y: centerY + radius * 1.1, color: '#00ffff', dragging: false }
+    ];
+    
+    // Initialize receiver on Earth's surface
+    receiverPos = { 
+        x: centerX + radius * 0.4, 
+        y: centerY - radius * 0.6,
+        dragging: false 
+    };
+}
+
+function randomizeSatellites(canvas) {
+    const width = canvas.width;
+    const height = canvas.height;
+    const centerX = width / 2;
+    const centerY = height / 2;
+    const minDist = earthRadius * 1.5;
+    const maxDist = earthRadius * 2.5;
+    
+    satellites.forEach(sat => {
+        const angle = Math.random() * Math.PI * 2;
+        const dist = minDist + Math.random() * (maxDist - minDist);
+        sat.x = centerX + Math.cos(angle) * dist;
+        sat.y = centerY + Math.sin(angle) * dist;
+    });
+    
+    drawGPSScene(canvas);
 }
 
 function resizeGlobeCanvas() {
@@ -662,199 +940,433 @@ function resizeGlobeCanvas() {
     if (!canvas) return;
     
     const container = canvas.parentElement;
-    const maxWidth = Math.min(800, container.clientWidth - 40);
+    const maxWidth = Math.min(900, container.clientWidth - 40);
     canvas.width = maxWidth;
-    canvas.height = maxWidth * 0.75;
+    canvas.height = maxWidth * 0.72;
     
     if (gpsAnimationState === 'idle') {
-        drawGlobe(canvas);
+        initializeGPSObjects(canvas);
+        drawGPSScene(canvas);
     }
 }
 
-function drawGlobe(canvas, satellites = null, spheres = null, targetPoint = null) {
+function handleGPSMouseDown(e) {
+    const canvas = e.target;
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    
+    checkDraggableObjects(x, y, e);
+}
+
+function handleGPSTouchStart(e) {
+    e.preventDefault();
+    const canvas = e.target;
+    const rect = canvas.getBoundingClientRect();
+    const touch = e.touches[0];
+    const x = touch.clientX - rect.left;
+    const y = touch.clientY - rect.top;
+    
+    checkDraggableObjects(x, y, e);
+}
+
+let satelliteClickTime = 0;
+
+function checkDraggableObjects(x, y, event) {
+    const currentTime = Date.now();
+    const isQuickClick = (currentTime - satelliteClickTime) < 250; // 250ms for click vs drag
+    
+    // Check satellites - differentiate between click (toggle sphere) and drag (move satellite)
+    for (let i = 0; i < satellites.length; i++) {
+        const sat = satellites[i];
+        const dist = Math.sqrt(Math.pow(x - sat.x, 2) + Math.pow(y - sat.y, 2));
+        if (dist < 20) {
+            // Start dragging - will determine if click or drag on mouseup
+            sat.dragging = true;
+            sat.clickStartTime = currentTime;
+            sat.startX = sat.x;
+            sat.startY = sat.y;
+            sat.clickStartX = x;
+            sat.clickStartY = y;
+            draggingObject = sat;
+            draggingObject.satIndex = i;
+            return;
+        }
+    }
+    
+    // Check receiver
+    const distReceiver = Math.sqrt(Math.pow(x - receiverPos.x, 2) + Math.pow(y - receiverPos.y, 2));
+    if (distReceiver < 15) {
+        receiverPos.dragging = true;
+        draggingObject = receiverPos;
+        return;
+    }
+    
+    // Check if clicking anywhere on Earth to move receiver there
+    const distFromCenter = Math.sqrt(Math.pow(x - earthCenter.x, 2) + Math.pow(y - earthCenter.y, 2));
+    if (distFromCenter <= earthRadius) {
+        receiverPos.dragging = true;
+        draggingObject = receiverPos;
+        receiverPos.x = x;
+        receiverPos.y = y;
+    }
+}
+
+function handleGPSMouseMove(e) {
+    const canvas = e.target;
+    if (!draggingObject) {
+        // Change cursor on hover
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        
+        let hovering = false;
+        for (let sat of satellites) {
+            const dist = Math.sqrt(Math.pow(x - sat.x, 2) + Math.pow(y - sat.y, 2));
+            if (dist < 20) {
+                hovering = true;
+                canvas.style.cursor = 'pointer'; // Pointer for clickable satellites
+                return;
+            }
+        }
+        const distReceiver = Math.sqrt(Math.pow(x - receiverPos.x, 2) + Math.pow(y - receiverPos.y, 2));
+        if (distReceiver < 15) hovering = true;
+        
+        // Also check if hovering over Earth
+        const distFromCenter = Math.sqrt(Math.pow(x - earthCenter.x, 2) + Math.pow(y - earthCenter.y, 2));
+        if (distFromCenter <= earthRadius) hovering = true;
+        
+        canvas.style.cursor = hovering ? 'grab' : 'default';
+        return;
+    }
+    
+    canvas.style.cursor = 'grabbing';
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    
+    if (draggingObject === receiverPos) {
+        // Allow receiver to be placed anywhere within Earth
+        const dx = x - earthCenter.x;
+        const dy = y - earthCenter.y;
+        const distFromCenter = Math.sqrt(dx * dx + dy * dy);
+        
+        // Keep receiver within Earth's bounds
+        if (distFromCenter <= earthRadius) {
+            receiverPos.x = x;
+            receiverPos.y = y;
+        } else {
+            // Clamp to Earth's surface if dragged outside
+            const angle = Math.atan2(dy, dx);
+            receiverPos.x = earthCenter.x + Math.cos(angle) * earthRadius;
+            receiverPos.y = earthCenter.y + Math.sin(angle) * earthRadius;
+        }
+    } else {
+        draggingObject.x = x;
+        draggingObject.y = y;
+    }
+    
+    drawGPSScene(canvas);
+}
+
+function handleGPSTouchMove(e) {
+    e.preventDefault();
+    if (!draggingObject) return;
+    
+    const canvas = e.target;
+    const rect = canvas.getBoundingClientRect();
+    const touch = e.touches[0];
+    const x = touch.clientX - rect.left;
+    const y = touch.clientY - rect.top;
+    
+    if (draggingObject === receiverPos) {
+        // Allow receiver to be placed anywhere within Earth
+        const dx = x - earthCenter.x;
+        const dy = y - earthCenter.y;
+        const distFromCenter = Math.sqrt(dx * dx + dy * dy);
+        
+        // Keep receiver within Earth's bounds
+        if (distFromCenter <= earthRadius) {
+            receiverPos.x = x;
+            receiverPos.y = y;
+        } else {
+            // Clamp to Earth's surface if dragged outside
+            const angle = Math.atan2(dy, dx);
+            receiverPos.x = earthCenter.x + Math.cos(angle) * earthRadius;
+            receiverPos.y = earthCenter.y + Math.sin(angle) * earthRadius;
+        }
+    } else {
+        draggingObject.x = x;
+        draggingObject.y = y;
+    }
+    
+    drawGPSScene(canvas);
+}
+
+function handleGPSMouseUp(e) {
+    if (draggingObject && draggingObject.satIndex !== undefined) {
+        const sat = draggingObject;
+        const i = draggingObject.satIndex;
+        
+        // Check if this was a click (minimal movement and quick)
+        const timeDiff = Date.now() - sat.clickStartTime;
+        const moveDist = Math.sqrt(
+            Math.pow(sat.x - sat.startX, 2) + 
+            Math.pow(sat.y - sat.startY, 2)
+        );
+        
+        // If moved less than 5 pixels and released quickly, treat as click
+        if (moveDist < 5 && timeDiff < 300) {
+            // Toggle this satellite's sphere visibility
+            satelliteSphereStates[i] = !satelliteSphereStates[i];
+            
+            // Update the show all button state
+            const allOn = satelliteSphereStates.every(state => state);
+            const allOff = satelliteSphereStates.every(state => !state);
+            showSpheres = allOn;
+            
+            const showSpheresBtn = document.getElementById('show-spheres');
+            if (allOn) {
+                showSpheresBtn.textContent = '🌐 Hide Distance Spheres';
+            } else if (allOff) {
+                showSpheresBtn.textContent = '🌐 Show Distance Spheres';
+            } else {
+                showSpheresBtn.textContent = '🌐 Toggle All Spheres';
+            }
+            
+            const canvas = document.getElementById('globe-canvas');
+            drawGPSScene(canvas);
+        }
+    }
+    
+    if (draggingObject) {
+        draggingObject.dragging = false;
+        draggingObject = null;
+    }
+    const canvas = document.getElementById('globe-canvas');
+    if (canvas) canvas.style.cursor = 'default';
+}
+
+function drawGPSScene(canvas) {
     const ctx = canvas.getContext('2d');
     const width = canvas.width;
     const height = canvas.height;
-    const centerX = width / 2;
-    const centerY = height / 2;
-    const radius = Math.min(width, height) * 0.25;
     
     // Clear
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+    ctx.fillStyle = 'rgba(10, 10, 31, 0.95)';
     ctx.fillRect(0, 0, width, height);
+    
+    // Draw distance spheres first (behind everything)
+    if (showSpheres || satelliteSphereStates.some(state => state)) {
+        satellites.forEach((sat, idx) => {
+            // Only draw sphere if this satellite's sphere is enabled
+            if (!satelliteSphereStates[idx]) return;
+            
+            const dist = Math.sqrt(
+                Math.pow(receiverPos.x - sat.x, 2) + 
+                Math.pow(receiverPos.y - sat.y, 2)
+            );
+            
+            ctx.strokeStyle = sat.color;
+            ctx.lineWidth = 2;
+            ctx.globalAlpha = 0.4;
+            ctx.setLineDash([5, 5]);
+            
+            ctx.beginPath();
+            ctx.arc(sat.x, sat.y, dist, 0, Math.PI * 2);
+            ctx.stroke();
+            
+            ctx.globalAlpha = 0.08;
+            ctx.fillStyle = sat.color;
+            ctx.fill();
+            
+            ctx.globalAlpha = 1;
+            ctx.setLineDash([]);
+        });
+    }
     
     // Draw Earth
     ctx.strokeStyle = '#00ffff';
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 3;
+    ctx.shadowBlur = 15;
+    ctx.shadowColor = '#00ffff';
     
-    // Main circle
     ctx.beginPath();
-    ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+    ctx.arc(earthCenter.x, earthCenter.y, earthRadius, 0, Math.PI * 2);
     ctx.stroke();
+    ctx.shadowBlur = 0;
+    
+    // Earth fill
+    ctx.fillStyle = 'rgba(0, 100, 150, 0.15)';
+    ctx.fill();
     
     // Latitude lines
     ctx.strokeStyle = 'rgba(0, 255, 255, 0.3)';
     ctx.lineWidth = 1;
     for (let i = 1; i < 5; i++) {
-        const r = radius * Math.sin((i / 5) * Math.PI);
-        const y = radius * Math.cos((i / 5) * Math.PI);
+        const r = earthRadius * Math.sin((i / 5) * Math.PI);
+        const y = earthRadius * Math.cos((i / 5) * Math.PI);
         
         ctx.beginPath();
-        ctx.ellipse(centerX, centerY - y, r, r * 0.3, 0, 0, Math.PI * 2);
+        ctx.ellipse(earthCenter.x, earthCenter.y - y, r, r * 0.3, 0, 0, Math.PI * 2);
         ctx.stroke();
         
         ctx.beginPath();
-        ctx.ellipse(centerX, centerY + y, r, r * 0.3, 0, 0, Math.PI * 2);
+        ctx.ellipse(earthCenter.x, earthCenter.y + y, r, r * 0.3, 0, 0, Math.PI * 2);
         ctx.stroke();
     }
     
     // Longitude lines
     for (let i = 0; i < 4; i++) {
         const angle = (i / 4) * Math.PI;
-        const rx = Math.abs(Math.cos(angle)) * radius;
+        const rx = Math.abs(Math.cos(angle)) * earthRadius;
         
         ctx.beginPath();
-        ctx.ellipse(centerX, centerY, rx, radius, angle, 0, Math.PI * 2);
+        ctx.ellipse(earthCenter.x, earthCenter.y, rx, earthRadius, angle, 0, Math.PI * 2);
         ctx.stroke();
     }
     
-    // Draw satellites
-    const defaultSatellites = [
-        { x: centerX + radius * 1.8, y: centerY - radius * 1.2, color: '#ff0080' },
-        { x: centerX - radius * 1.5, y: centerY - radius * 1.5, color: '#00ff80' },
-        { x: centerX + radius * 0.5, y: centerY + radius * 2, color: '#ffff00' },
-        { x: centerX - radius * 1.8, y: centerY + radius * 0.8, color: '#00ffff' }
-    ];
+    // Draw signal lines from satellites to receiver
+    satellites.forEach((sat, idx) => {
+        const dist = Math.sqrt(
+            Math.pow(receiverPos.x - sat.x, 2) + 
+            Math.pow(receiverPos.y - sat.y, 2)
+        );
+        
+        ctx.strokeStyle = sat.color;
+        ctx.lineWidth = 1;
+        ctx.globalAlpha = 0.4;
+        ctx.setLineDash([3, 3]);
+        
+        ctx.beginPath();
+        ctx.moveTo(sat.x, sat.y);
+        ctx.lineTo(receiverPos.x, receiverPos.y);
+        ctx.stroke();
+        
+        ctx.setLineDash([]);
+        ctx.globalAlpha = 1;
+    });
     
-    const sats = satellites || defaultSatellites;
-    sats.forEach((sat, idx) => {
+    // Draw satellites
+    satellites.forEach((sat, idx) => {
         ctx.fillStyle = sat.color;
         ctx.strokeStyle = sat.color;
         ctx.lineWidth = 2;
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = sat.color;
         
-        // Satellite icon
+        // Add ring around satellite if its sphere is visible
+        if (satelliteSphereStates[idx]) {
+            ctx.globalAlpha = 0.5;
+            ctx.beginPath();
+            ctx.arc(sat.x, sat.y, 16, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.globalAlpha = 1;
+        }
+        
+        // Satellite body
         ctx.beginPath();
-        ctx.arc(sat.x, sat.y, 8, 0, Math.PI * 2);
+        ctx.arc(sat.x, sat.y, 10, 0, Math.PI * 2);
         ctx.fill();
+        
+        ctx.shadowBlur = 0;
         
         // Solar panels
-        ctx.fillRect(sat.x - 15, sat.y - 3, 10, 6);
-        ctx.fillRect(sat.x + 5, sat.y - 3, 10, 6);
+        ctx.fillRect(sat.x - 20, sat.y - 4, 12, 8);
+        ctx.fillRect(sat.x + 8, sat.y - 4, 12, 8);
         
         // Label
-        ctx.font = '12px JetBrains Mono';
-        ctx.fillText(`S${idx + 1}`, sat.x - 10, sat.y - 15);
+        ctx.font = 'bold 11px JetBrains Mono';
+        ctx.fillStyle = sat.color;
+        ctx.textAlign = 'center';
+        ctx.fillText(`SAT-${idx + 1}`, sat.x, sat.y - 20);
     });
     
-    // Draw spheres
-    if (spheres) {
-        spheres.forEach((sphere, idx) => {
-            if (sphere.radius > 0) {
-                ctx.strokeStyle = sphere.color;
-                ctx.lineWidth = 2;
-                ctx.globalAlpha = 0.3;
-                
-                ctx.beginPath();
-                ctx.arc(sphere.x, sphere.y, sphere.radius, 0, Math.PI * 2);
-                ctx.stroke();
-                
-                ctx.globalAlpha = 0.05;
-                ctx.fillStyle = sphere.color;
-                ctx.fill();
-                
-                ctx.globalAlpha = 1;
-            }
-        });
-    }
+    // Draw receiver on Earth
+    ctx.fillStyle = '#ffffff';
+    ctx.strokeStyle = '#00ffff';
+    ctx.lineWidth = 3;
+    ctx.shadowBlur = 15;
+    ctx.shadowColor = '#ffffff';
     
-    // Draw target point
-    if (targetPoint) {
-        ctx.fillStyle = '#ffffff';
-        ctx.strokeStyle = '#00ffff';
-        ctx.lineWidth = 3;
-        
-        ctx.beginPath();
-        ctx.arc(targetPoint.x, targetPoint.y, 10, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
-        
-        // Pulsing effect
-        ctx.globalAlpha = 0.5;
-        ctx.beginPath();
-        ctx.arc(targetPoint.x, targetPoint.y, 15, 0, Math.PI * 2);
-        ctx.stroke();
-        ctx.globalAlpha = 1;
-    }
+    ctx.beginPath();
+    ctx.arc(receiverPos.x, receiverPos.y, 8, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    
+    // Pulsing ring
+    ctx.globalAlpha = 0.6;
+    ctx.beginPath();
+    ctx.arc(receiverPos.x, receiverPos.y, 14, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+    ctx.shadowBlur = 0;
+    
+    // Receiver icon
+    ctx.fillStyle = '#00ffff';
+    ctx.font = 'bold 10px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('📍', receiverPos.x, receiverPos.y - 25);
+    
+    // Update distance readouts
+    updateDistanceReadouts();
 }
 
-function startTrilateration() {
-    const canvas = document.getElementById('globe-canvas');
-    const statusText = document.getElementById('gps-status');
+function updateDistanceReadouts() {
+    satellites.forEach((sat, idx) => {
+        const dist = Math.sqrt(
+            Math.pow(receiverPos.x - sat.x, 2) + 
+            Math.pow(receiverPos.y - sat.y, 2)
+        );
+        
+        const distKm = (dist / 2).toFixed(1); // Scale for visualization
+        const readout = document.querySelector(`.sat-readout[data-sat="${idx}"] .sat-distance`);
+        if (readout) {
+            readout.textContent = `${distKm} km`;
+        }
+    });
     
+    document.getElementById('position-status').textContent = 'Position calculated from satellite distances';
+}
+
+function animateAutoLocate(canvas) {
     gpsAnimationState = 'animating';
+    document.getElementById('position-status').textContent = 'Calculating position...';
     
-    const width = canvas.width;
-    const height = canvas.height;
-    const centerX = width / 2;
-    const centerY = height / 2;
-    const radius = Math.min(width, height) * 0.25;
+    let step = 0;
+    const maxSteps = 60;
     
-    const satellites = [
-        { x: centerX + radius * 1.8, y: centerY - radius * 1.2, color: '#ff0080' },
-        { x: centerX - radius * 1.5, y: centerY - radius * 1.5, color: '#00ff80' },
-        { x: centerX + radius * 0.5, y: centerY + radius * 2, color: '#ffff00' },
-        { x: centerX - radius * 1.8, y: centerY + radius * 0.8, color: '#00ffff' }
-    ];
+    // Random target position on Earth
+    const targetAngle = Math.random() * Math.PI * 2;
+    const targetPos = {
+        x: earthCenter.x + Math.cos(targetAngle) * earthRadius,
+        y: earthCenter.y + Math.sin(targetAngle) * earthRadius
+    };
     
-    const targetPoint = { x: centerX + radius * 0.3, y: centerY - radius * 0.5 };
-    
-    let currentSatellite = 0;
-    let sphereRadius = 0;
-    const spheres = [
-        { x: satellites[0].x, y: satellites[0].y, radius: 0, color: satellites[0].color },
-        { x: satellites[1].x, y: satellites[1].y, radius: 0, color: satellites[1].color },
-        { x: satellites[2].x, y: satellites[2].y, radius: 0, color: satellites[2].color },
-        { x: satellites[3].x, y: satellites[3].y, radius: 0, color: satellites[3].color }
-    ];
+    const startPos = { x: receiverPos.x, y: receiverPos.y };
     
     function animate() {
-        if (currentSatellite < 4) {
-            const sat = satellites[currentSatellite];
-            const targetDist = Math.sqrt(
-                Math.pow(targetPoint.x - sat.x, 2) + 
-                Math.pow(targetPoint.y - sat.y, 2)
-            );
-            
-            sphereRadius += 5;
-            spheres[currentSatellite].radius = sphereRadius;
-            
-            drawGlobe(canvas, satellites, spheres, null);
-            
-            if (sphereRadius >= targetDist) {
-                sphereRadius = 0;
-                currentSatellite++;
-                
-                const messages = [
-                    'Satellite 1: Creating sphere of possible locations...',
-                    'Satellite 2: Narrowing down to a circle...',
-                    'Satellite 3: Reducing to two possible points...',
-                    'Satellite 4: Locked on! Exact position determined.'
-                ];
-                statusText.textContent = messages[currentSatellite - 1] || messages[3];
-            }
-            
-            gpsAnimationFrame = requestAnimationFrame(animate);
+        step++;
+        const progress = step / maxSteps;
+        const easeProgress = 1 - Math.pow(1 - progress, 3); // Ease out cubic
+        
+        receiverPos.x = startPos.x + (targetPos.x - startPos.x) * easeProgress;
+        receiverPos.y = startPos.y + (targetPos.y - startPos.y) * easeProgress;
+        
+        drawGPSScene(canvas);
+        
+        if (step < maxSteps) {
+            requestAnimationFrame(animate);
         } else {
-            // Show final target
-            drawGlobe(canvas, satellites, spheres, targetPoint);
-            statusText.textContent = 'Trilateration complete! Position locked.';
-            gpsAnimationState = 'complete';
+            gpsAnimationState = 'idle';
+            document.getElementById('position-status').textContent = 'Position locked! 🎯';
         }
     }
     
-    statusText.textContent = 'Satellite 1: Emitting signal pulse...';
     animate();
 }
+
 
 // ============================================
 // Noise Cancellation Visualization
@@ -863,10 +1375,14 @@ function startTrilateration() {
 let noiseAnimationFrame = null;
 let noiseAnimating = false;
 let noisePhase = 0;
+let phaseShift = Math.PI; // Default 180 degrees
 
 function initNoiseVisualization() {
     const playBtn = document.getElementById('play-noise');
     const stopBtn = document.getElementById('stop-noise');
+    const resetBtn = document.getElementById('reset-phase');
+    const phaseSlider = document.getElementById('phase-shift');
+    const phaseValue = document.getElementById('phase-value');
     
     const originalCanvas = document.getElementById('noise-original');
     const invertedCanvas = document.getElementById('noise-inverted');
@@ -877,21 +1393,79 @@ function initNoiseVisualization() {
     window.addEventListener('resize', resizeNoiseCanvases);
     
     // Initial static draw
-    drawNoiseWave(originalCanvas, 0, false);
-    drawNoiseWave(invertedCanvas, 0, true);
-    drawResultWave(resultCanvas, 0);
+    drawNoiseWave(originalCanvas, 0, false, 0);
+    drawNoiseWave(invertedCanvas, 0, true, phaseShift);
+    drawResultWave(resultCanvas, 0, phaseShift);
+    
+    // Phase shift slider
+    phaseSlider.addEventListener('input', (e) => {
+        const degrees = parseInt(e.target.value);
+        phaseShift = (degrees * Math.PI) / 180;
+        phaseValue.textContent = degrees + '°';
+        
+        // Redraw all waves
+        if (!noiseAnimating) {
+            drawNoiseWave(originalCanvas, noisePhase, false, 0);
+            drawNoiseWave(invertedCanvas, noisePhase, true, phaseShift);
+            drawResultWave(resultCanvas, noisePhase, phaseShift);
+        }
+        
+        updateCancellationLevel(degrees);
+    });
     
     playBtn.addEventListener('click', () => {
         noiseAnimating = true;
+        playBtn.disabled = true;
+        stopBtn.disabled = false;
         animateNoiseWaves();
     });
     
     stopBtn.addEventListener('click', () => {
         noiseAnimating = false;
+        playBtn.disabled = false;
+        stopBtn.disabled = true;
         if (noiseAnimationFrame) {
             cancelAnimationFrame(noiseAnimationFrame);
         }
     });
+    
+    resetBtn.addEventListener('click', () => {
+        phaseSlider.value = 180;
+        phaseShift = Math.PI;
+        phaseValue.textContent = '180°';
+        updateCancellationLevel(180);
+        
+        if (!noiseAnimating) {
+            drawNoiseWave(originalCanvas, noisePhase, false, 0);
+            drawNoiseWave(invertedCanvas, noisePhase, true, phaseShift);
+            drawResultWave(resultCanvas, noisePhase, phaseShift);
+        }
+    });
+    
+    // Initial cancellation level
+    updateCancellationLevel(180);
+}
+
+function updateCancellationLevel(degrees) {
+    const cancellationSpan = document.getElementById('cancellation-level');
+    
+    // Calculate cancellation percentage
+    // Perfect cancellation at 180°, worst at 0° and 360°
+    const normalizedDegrees = degrees % 360;
+    // Use cos for the deviation from 180°
+    const deviationFrom180 = Math.abs(normalizedDegrees - 180);
+    const actualCancellation = 100 - (deviationFrom180 / 180) * 100;
+    
+    if (actualCancellation > 95) {
+        cancellationSpan.textContent = `Perfect Cancellation: ${actualCancellation.toFixed(1)}%`;
+        cancellationSpan.style.color = '#00ffff';
+    } else if (actualCancellation > 50) {
+        cancellationSpan.textContent = `Partial Cancellation: ${actualCancellation.toFixed(1)}%`;
+        cancellationSpan.style.color = '#ffaa00';
+    } else {
+        cancellationSpan.textContent = `Poor Cancellation: ${actualCancellation.toFixed(1)}%`;
+        cancellationSpan.style.color = '#ff0080';
+    }
 }
 
 function resizeNoiseCanvases() {
@@ -901,53 +1475,84 @@ function resizeNoiseCanvases() {
         if (!canvas) return;
         
         const container = canvas.parentElement;
-        const maxWidth = Math.min(600, container.clientWidth - 40);
+        const maxWidth = Math.min(800, container.clientWidth - 40);
         canvas.width = maxWidth;
-        canvas.height = 120;
+        canvas.height = 180;
     });
     
     if (!noiseAnimating) {
-        drawNoiseWave(document.getElementById('noise-original'), 0, false);
-        drawNoiseWave(document.getElementById('noise-inverted'), 0, true);
-        drawResultWave(document.getElementById('noise-result'), 0);
+        drawNoiseWave(document.getElementById('noise-original'), noisePhase, false, 0);
+        drawNoiseWave(document.getElementById('noise-inverted'), noisePhase, true, phaseShift);
+        drawResultWave(document.getElementById('noise-result'), noisePhase, phaseShift);
     }
 }
 
-function drawNoiseWave(canvas, phase, inverted = false) {
+function drawNoiseWave(canvas, phase, inverted = false, customPhaseShift = 0) {
     const ctx = canvas.getContext('2d');
     const width = canvas.width;
     const height = canvas.height;
     
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+    // Clear with dark background
+    ctx.fillStyle = 'rgba(10, 10, 31, 0.95)';
     ctx.fillRect(0, 0, width, height);
     
-    // Draw center line
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+    // Draw grid lines
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
     ctx.lineWidth = 1;
+    
+    // Horizontal grid lines
+    for (let i = 0; i <= 4; i++) {
+        const y = (height / 4) * i;
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(width, y);
+        ctx.stroke();
+    }
+    
+    // Vertical grid lines
+    for (let i = 0; i <= 8; i++) {
+        const x = (width / 8) * i;
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, height);
+        ctx.stroke();
+    }
+    
+    // Draw center line (zero axis)
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+    ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.moveTo(0, height / 2);
     ctx.lineTo(width, height / 2);
     ctx.stroke();
     
-    // Draw complex noise wave
-    ctx.strokeStyle = inverted ? '#9d00ff' : '#ff0080';
-    ctx.lineWidth = 2;
+    // Draw the wave
+    ctx.strokeStyle = inverted ? '#9d00ff' : '#00b8ff';
+    ctx.lineWidth = 3;
+    ctx.shadowBlur = 10;
+    ctx.shadowColor = inverted ? '#9d00ff' : '#00b8ff';
     ctx.beginPath();
     
+    const amplitude = height * 0.35;
+    const frequency = 4; // Number of complete waves to show
+    
     for (let x = 0; x < width; x++) {
-        const t = (x / width) * Math.PI * 4 + phase;
+        const t = (x / width) * Math.PI * frequency + phase;
         
-        // Complex wave combining multiple frequencies
-        let y = Math.sin(t * 2) * 0.3;
-        y += Math.sin(t * 3.5) * 0.15;
-        y += Math.sin(t * 5) * 0.1;
-        y += Math.sin(t * 7.5) * 0.05;
+        // Complex wave combining multiple frequencies (realistic noise)
+        let y = Math.sin(t * 2) * 0.5;
+        y += Math.sin(t * 3.5) * 0.25;
+        y += Math.sin(t * 5) * 0.15;
+        y += Math.sin(t * 7.5) * 0.1;
         
-        if (inverted) {
-            y = -y;
-        }
+        // Apply phase shift for anti-noise wave
+        const effectivePhase = inverted ? customPhaseShift : 0;
+        y = Math.sin(t * 2 + effectivePhase) * 0.5 +
+            Math.sin(t * 3.5 + effectivePhase) * 0.25 +
+            Math.sin(t * 5 + effectivePhase) * 0.15 +
+            Math.sin(t * 7.5 + effectivePhase) * 0.1;
         
-        const py = height / 2 - y * height * 0.4;
+        const py = height / 2 - y * amplitude;
         
         if (x === 0) {
             ctx.moveTo(x, py);
@@ -956,32 +1561,144 @@ function drawNoiseWave(canvas, phase, inverted = false) {
         }
     }
     ctx.stroke();
+    ctx.shadowBlur = 0;
+    
+    // Add labels
+    ctx.fillStyle = inverted ? '#9d00ff' : '#00b8ff';
+    ctx.font = 'bold 12px JetBrains Mono';
+    ctx.fillText(inverted ? 'Anti-Noise' : 'Original', 10, 20);
 }
 
-function drawResultWave(canvas, phase) {
+function drawResultWave(canvas, phase, currentPhaseShift) {
     const ctx = canvas.getContext('2d');
     const width = canvas.width;
     const height = canvas.height;
     
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+    // Clear with dark background
+    ctx.fillStyle = 'rgba(10, 10, 31, 0.95)';
     ctx.fillRect(0, 0, width, height);
     
-    // Draw center line (silence)
-    ctx.strokeStyle = '#00ffff';
-    ctx.lineWidth = 3;
-    ctx.shadowBlur = 20;
-    ctx.shadowColor = '#00ffff';
+    // Draw grid lines
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+    ctx.lineWidth = 1;
+    
+    // Horizontal grid lines
+    for (let i = 0; i <= 4; i++) {
+        const y = (height / 4) * i;
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(width, y);
+        ctx.stroke();
+    }
+    
+    // Vertical grid lines
+    for (let i = 0; i <= 8; i++) {
+        const x = (width / 8) * i;
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, height);
+        ctx.stroke();
+    }
+    
+    // Draw center line (zero axis)
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+    ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.moveTo(0, height / 2);
     ctx.lineTo(width, height / 2);
     ctx.stroke();
+    
+    // Draw both original waves faintly for reference
+    const amplitude = height * 0.35;
+    const frequency = 4;
+    
+    // Draw original wave faintly
+    ctx.strokeStyle = 'rgba(0, 184, 255, 0.2)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (let x = 0; x < width; x++) {
+        const t = (x / width) * Math.PI * frequency + phase;
+        let y = Math.sin(t * 2) * 0.5 +
+                Math.sin(t * 3.5) * 0.25 +
+                Math.sin(t * 5) * 0.15 +
+                Math.sin(t * 7.5) * 0.1;
+        const py = height / 2 - y * amplitude;
+        if (x === 0) ctx.moveTo(x, py);
+        else ctx.lineTo(x, py);
+    }
+    ctx.stroke();
+    
+    // Draw anti-noise wave faintly
+    ctx.strokeStyle = 'rgba(157, 0, 255, 0.2)';
+    ctx.beginPath();
+    for (let x = 0; x < width; x++) {
+        const t = (x / width) * Math.PI * frequency + phase;
+        let y = Math.sin(t * 2 + currentPhaseShift) * 0.5 +
+                Math.sin(t * 3.5 + currentPhaseShift) * 0.25 +
+                Math.sin(t * 5 + currentPhaseShift) * 0.15 +
+                Math.sin(t * 7.5 + currentPhaseShift) * 0.1;
+        const py = height / 2 - y * amplitude;
+        if (x === 0) ctx.moveTo(x, py);
+        else ctx.lineTo(x, py);
+    }
+    ctx.stroke();
+    
+    // Draw resultant wave (superposition)
+    ctx.strokeStyle = '#00ffff';
+    ctx.lineWidth = 3;
+    ctx.shadowBlur = 15;
+    ctx.shadowColor = '#00ffff';
+    ctx.beginPath();
+    
+    for (let x = 0; x < width; x++) {
+        const t = (x / width) * Math.PI * frequency + phase;
+        
+        // Original wave
+        let y1 = Math.sin(t * 2) * 0.5 +
+                 Math.sin(t * 3.5) * 0.25 +
+                 Math.sin(t * 5) * 0.15 +
+                 Math.sin(t * 7.5) * 0.1;
+        
+        // Anti-noise wave with phase shift
+        let y2 = Math.sin(t * 2 + currentPhaseShift) * 0.5 +
+                 Math.sin(t * 3.5 + currentPhaseShift) * 0.25 +
+                 Math.sin(t * 5 + currentPhaseShift) * 0.15 +
+                 Math.sin(t * 7.5 + currentPhaseShift) * 0.1;
+        
+        // Superposition
+        const ySum = y1 + y2;
+        const py = height / 2 - ySum * amplitude;
+        
+        if (x === 0) {
+            ctx.moveTo(x, py);
+        } else {
+            ctx.lineTo(x, py);
+        }
+    }
+    ctx.stroke();
     ctx.shadowBlur = 0;
     
-    // Draw "Silence" text
+    // Add label
     ctx.fillStyle = '#00ffff';
-    ctx.font = 'bold 20px JetBrains Mono';
-    ctx.textAlign = 'center';
-    ctx.fillText('SILENCE', width / 2, height / 2 - 20);
+    ctx.font = 'bold 12px JetBrains Mono';
+    ctx.fillText('Resultant', 10, 20);
+    
+    // Show "SILENCE" text if near perfect cancellation
+    const degrees = (currentPhaseShift * 180) / Math.PI;
+    const normalizedDegrees = degrees % 360;
+    const deviationFrom180 = Math.abs(normalizedDegrees - 180);
+    const actualCancellation = 100 - (deviationFrom180 / 180) * 100;
+    
+    if (actualCancellation > 95) {
+        ctx.fillStyle = '#00ffff';
+        ctx.font = 'bold 24px JetBrains Mono';
+        ctx.textAlign = 'center';
+        ctx.shadowBlur = 20;
+        ctx.shadowColor = '#00ffff';
+        ctx.fillText('✨ SILENCE ✨', width / 2, height / 2);
+        ctx.shadowBlur = 0;
+        ctx.textAlign = 'left';
+    }
 }
 
 function animateNoiseWaves() {
@@ -991,14 +1708,15 @@ function animateNoiseWaves() {
     const invertedCanvas = document.getElementById('noise-inverted');
     const resultCanvas = document.getElementById('noise-result');
     
-    drawNoiseWave(originalCanvas, noisePhase, false);
-    drawNoiseWave(invertedCanvas, noisePhase, true);
-    drawResultWave(resultCanvas, noisePhase);
+    drawNoiseWave(originalCanvas, noisePhase, false, 0);
+    drawNoiseWave(invertedCanvas, noisePhase, true, phaseShift);
+    drawResultWave(resultCanvas, noisePhase, phaseShift);
     
-    noisePhase += 0.05;
+    noisePhase += 0.03;
     
     noiseAnimationFrame = requestAnimationFrame(animateNoiseWaves);
 }
+
 
 // ============================================
 // Initialize Everything
@@ -1027,13 +1745,30 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-// Handle window resize for all canvases
+// Handle window resize for all canvases with debouncing
+let resizeTimeout;
 window.addEventListener('resize', () => {
-    if (currentTopic === 'trig') {
-        resizeTaylorCanvas();
-    } else if (currentTopic === 'gps') {
-        resizeGlobeCanvas();
-    } else if (currentTopic === 'noise') {
-        resizeNoiseCanvases();
-    }
-});
+    clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(() => {
+        if (currentTopic === 'trig') {
+            resizeTaylorCanvas();
+        } else if (currentTopic === 'gps') {
+            resizeGlobeCanvas();
+        } else if (currentTopic === 'noise') {
+            resizeNoiseCanvases();
+        }
+    }, 150); // Debounce resize events
+}, { passive: true });
+
+// Add orientation change handler for mobile
+window.addEventListener('orientationchange', () => {
+    setTimeout(() => {
+        if (currentTopic === 'trig') {
+            resizeTaylorCanvas();
+        } else if (currentTopic === 'gps') {
+            resizeGlobeCanvas();
+        } else if (currentTopic === 'noise') {
+            resizeNoiseCanvases();
+        }
+    }, 200); // Delay to allow viewport adjustment
+}, { passive: true });

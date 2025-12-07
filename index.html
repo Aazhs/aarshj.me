@@ -2,7 +2,11 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#0a0a1f">
     <title>The Digital Mathscape</title>
     <link rel="stylesheet" href="styles.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -124,61 +128,126 @@
             <h1>QR Codes: Error Correction Magic</h1>
             
             <div class="section">
-                <h3>Encoding Process</h3>
+                <h3>Interactive QR Code Generator</h3>
+                <p style="color: rgba(255,255,255,0.7); margin-bottom: 20px;">
+                    QR codes use Reed-Solomon error correction to remain readable even when damaged. 
+                    Try creating your own QR code and see how much damage it can withstand!
+                </p>
+                
                 <div id="qr-encoding" class="visualization">
-                    <div class="flow-container">
-                        <div class="flow-box">
-                            <div class="input-text" id="qr-input">https://aarshj.me</div>
+                    <div class="qr-input-section">
+                        <div class="input-group">
+                            <label for="qr-text-input">Enter Text or URL:</label>
+                            <input type="text" id="qr-text-input" class="text-input" 
+                                   value="https://aarshj.me" placeholder="Type anything...">
+                            <button id="generate-qr-btn" class="action-btn">🔄 Generate QR Code</button>
                         </div>
-                        <div class="flow-arrow">→</div>
-                        <div class="flow-box generator">
-                            <div class="label">Reed-Solomon Generator</div>
-                            <div class="gears">
-                                <div class="gear gear-1">⚙</div>
-                                <div class="gear gear-2">⚙</div>
+                        
+                        <div class="error-level-selector">
+                            <label>Error Correction Level:</label>
+                            <div class="level-buttons">
+                                <button class="level-btn" data-level="L">
+                                    <span class="level-name">Low</span>
+                                    <span class="level-desc">~7% recovery</span>
+                                </button>
+                                <button class="level-btn" data-level="M">
+                                    <span class="level-name">Medium</span>
+                                    <span class="level-desc">~15% recovery</span>
+                                </button>
+                                <button class="level-btn" data-level="Q">
+                                    <span class="level-name">Quartile</span>
+                                    <span class="level-desc">~25% recovery</span>
+                                </button>
+                                <button class="level-btn active" data-level="H">
+                                    <span class="level-name">High</span>
+                                    <span class="level-desc">~30% recovery</span>
+                                </button>
                             </div>
-                            <div class="formula">M(x) = x⁸ + x⁴ + x³ + x² + 1</div>
                         </div>
-                        <div class="flow-arrow">→</div>
-                        <div class="flow-box">
-                            <canvas id="qr-canvas" width="200" height="200"></canvas>
+                    </div>
+                    
+                    <div class="qr-display-section">
+                        <div class="qr-main-display">
+                            <canvas id="qr-canvas" width="300" height="300"></canvas>
+                            <div class="qr-info">
+                                <span id="qr-size-info">Size: --</span>
+                                <span id="qr-capacity-info">Capacity: --</span>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 
             <div class="section">
-                <h3>Error Correction in Action</h3>
+                <h3>Error Correction Simulator</h3>
+                <p style="color: rgba(255,255,255,0.7); margin-bottom: 20px;">
+                    Click on the QR code below to damage individual cells, or use the slider to add random damage. 
+                    Watch Reed-Solomon algorithm work its magic to recover the original data!
+                </p>
+                
                 <div id="qr-correction" class="visualization">
-                    <div class="correction-container">
-                        <div class="qr-pair">
-                            <div class="qr-display">
-                                <canvas id="qr-damaged" width="200" height="200"></canvas>
-                                <p>Damaged QR Code</p>
-                                <button id="damage-btn" class="action-btn">Damage QR Code</button>
-                            </div>
-                            <div class="correction-process">
-                                <div class="process-step">
-                                    <div class="step-icon">🔍</div>
-                                    <div class="step-text">Detecting errors...</div>
-                                    <div class="step-progress"><div class="progress-bar"></div></div>
-                                </div>
-                                <div class="process-step">
-                                    <div class="step-icon">🧮</div>
-                                    <div class="step-text">Reed-Solomon calculation</div>
-                                    <div class="step-progress"><div class="progress-bar"></div></div>
-                                </div>
-                                <div class="process-step">
-                                    <div class="step-icon">✨</div>
-                                    <div class="step-text">Reconstructing data</div>
-                                    <div class="step-progress"><div class="progress-bar"></div></div>
-                                </div>
-                            </div>
-                            <div class="qr-display" id="qr-corrected-container" style="opacity: 0; visibility: hidden;">
-                                <canvas id="qr-corrected" width="200" height="200"></canvas>
-                                <p>Corrected QR Code ✓</p>
+                    <div class="damage-controls">
+                        <div class="damage-slider-group">
+                            <label for="damage-slider">
+                                <span>Damage Amount:</span>
+                                <span id="damage-percentage">0%</span>
+                            </label>
+                            <input type="range" id="damage-slider" min="0" max="40" value="0" step="1">
+                            <div class="damage-buttons">
+                                <button id="apply-damage-btn" class="action-btn">💥 Apply Random Damage</button>
+                                <button id="clear-damage-btn" class="action-btn">🔄 Clear Damage</button>
                             </div>
                         </div>
+                        
+                        <div class="damage-stats">
+                            <div class="stat-item">
+                                <span class="stat-label">Damaged Cells:</span>
+                                <span id="damaged-count" class="stat-value">0</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Recovery Status:</span>
+                                <span id="recovery-status" class="stat-value">Perfect</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="correction-container">
+                        <div class="qr-pair">
+                            <div class="qr-display interactive">
+                                <h4>Interactive Damage (Click to toggle cells)</h4>
+                                <canvas id="qr-damaged" width="300" height="300"></canvas>
+                                <p class="hint">💡 Click on cells to damage/repair them</p>
+                            </div>
+                            
+                            <div class="correction-arrow">
+                                <div class="arrow-body">
+                                    <div class="reed-solomon-badge">
+                                        <span class="badge-title">Reed-Solomon</span>
+                                        <span class="badge-subtitle">Error Correction</span>
+                                    </div>
+                                </div>
+                                <button id="correct-btn" class="action-btn correct-btn">
+                                    ✨ Attempt Recovery
+                                </button>
+                            </div>
+                            
+                            <div class="qr-display">
+                                <h4>Recovered QR Code</h4>
+                                <canvas id="qr-corrected" width="300" height="300"></canvas>
+                                <p id="scan-status" class="scan-status">Awaiting correction...</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="info-box qr-info-box">
+                        <h4>🧮 How Reed-Solomon Works:</h4>
+                        <ul>
+                            <li><strong>Polynomial Encoding:</strong> Data is encoded as coefficients of a polynomial</li>
+                            <li><strong>Redundancy:</strong> Extra error correction codewords are added (up to 30% of data)</li>
+                            <li><strong>Syndrome Calculation:</strong> Detects which cells are corrupted</li>
+                            <li><strong>Error Locator:</strong> Finds the exact positions of errors</li>
+                            <li><strong>Correction:</strong> Uses polynomial math to calculate correct values</li>
+                        </ul>
                     </div>
                 </div>
             </div>
@@ -244,35 +313,70 @@
     <div id="deepdive-gps" class="deepdive-section">
         <button class="close-btn">✕</button>
         <div class="deepdive-content">
-            <h1>GPS & Triangulation</h1>
+            <h1>GPS & Trilateration</h1>
             
             <div class="section">
-                <h3>Trilateration in Action</h3>
+                <h3>Interactive Trilateration Simulator</h3>
+                <p style="color: rgba(255,255,255,0.7); margin-bottom: 20px;">
+                    GPS uses trilateration (not triangulation!) with at least 4 satellites. Each satellite provides a distance measurement, 
+                    creating a sphere of possible locations. The intersection of these spheres pinpoints your exact position.
+                </p>
+                
                 <div id="gps-viz" class="visualization">
-                    <canvas id="globe-canvas" width="800" height="600"></canvas>
+                    <div class="gps-controls-top">
+                        <div class="satellite-info">
+                            <h4>Satellites</h4>
+                            <div id="satellite-distances" class="distance-readouts">
+                                <div class="sat-readout" data-sat="0">
+                                    <span class="sat-indicator" style="background: #ff0080;"></span>
+                                    <span class="sat-label">SAT-1:</span>
+                                    <span class="sat-distance">--</span>
+                                </div>
+                                <div class="sat-readout" data-sat="1">
+                                    <span class="sat-indicator" style="background: #00ff80;"></span>
+                                    <span class="sat-label">SAT-2:</span>
+                                    <span class="sat-distance">--</span>
+                                </div>
+                                <div class="sat-readout" data-sat="2">
+                                    <span class="sat-indicator" style="background: #ffaa00;"></span>
+                                    <span class="sat-label">SAT-3:</span>
+                                    <span class="sat-distance">--</span>
+                                </div>
+                                <div class="sat-readout" data-sat="3">
+                                    <span class="sat-indicator" style="background: #00ffff;"></span>
+                                    <span class="sat-label">SAT-4:</span>
+                                    <span class="sat-distance">--</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="position-info">
+                            <h4>Your Position</h4>
+                            <div class="coords">
+                                <span id="position-status">Drag receiver to see distances</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <canvas id="globe-canvas" width="900" height="650"></canvas>
+                    
                     <div class="controls">
-                        <button id="start-trilateration" class="action-btn">Start Trilateration</button>
-                        <button id="reset-trilateration" class="action-btn">Reset</button>
+                        <button id="show-spheres" class="action-btn">🌐 Show Distance Spheres</button>
+                        <button id="auto-locate" class="action-btn">📍 Auto-Locate</button>
+                        <button id="randomize-satellites" class="action-btn">🛰️ Randomize Satellites</button>
+                        <button id="reset-trilateration" class="action-btn">🔄 Reset</button>
                     </div>
-                    <div class="legend">
-                        <div class="legend-item">
-                            <div class="legend-color" style="background: #ff0080;"></div>
-                            <span>Satellite 1</span>
-                        </div>
-                        <div class="legend-item">
-                            <div class="legend-color" style="background: #00ff80;"></div>
-                            <span>Satellite 2</span>
-                        </div>
-                        <div class="legend-item">
-                            <div class="legend-color" style="background: #ffff00;"></div>
-                            <span>Satellite 3</span>
-                        </div>
-                        <div class="legend-item">
-                            <div class="legend-color" style="background: #00ffff;"></div>
-                            <span>Satellite 4 (Clock)</span>
-                        </div>
+                    
+                    <div class="info-box gps-info">
+                        <h4>💡 How to Use:</h4>
+                        <ul>
+                            <li><strong>Drag the white receiver</strong> (on Earth) to change your position</li>
+                            <li><strong>Drag satellites</strong> to see how their positions affect signal coverage</li>
+                            <li><strong>Show Spheres</strong> to visualize the distance to each satellite</li>
+                            <li><strong>Auto-Locate</strong> to see trilateration solve for your position automatically</li>
+                            <li><strong>Need 4 satellites:</strong> 3 for position (x,y,z) + 1 for clock synchronization</li>
+                        </ul>
                     </div>
-                    <div id="gps-status" class="status-text">Click "Start Trilateration" to begin</div>
                 </div>
             </div>
         </div>
@@ -285,53 +389,63 @@
             
             <div class="section">
                 <h3>Wave Physics Laboratory</h3>
+                <p style="color: rgba(255,255,255,0.7); margin-bottom: 20px;">
+                    Active Noise Cancellation works by generating an anti-noise wave that is 180° out of phase with the incoming sound. 
+                    When these waves combine through superposition, they cancel each other out.
+                </p>
+                
                 <div id="noise-viz" class="visualization">
-                    <div class="headphone-diagram">
-                        <svg viewBox="0 0 200 150" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M 60 50 Q 60 20, 100 20 Q 140 20, 140 50 L 140 80" fill="none" stroke="#00ffff" stroke-width="3"/>
-                            <circle cx="60" cy="90" r="25" fill="none" stroke="#00ffff" stroke-width="2"/>
-                            <circle cx="140" cy="90" r="25" fill="none" stroke="#00ffff" stroke-width="2"/>
-                            <circle cx="60" cy="90" r="20" fill="rgba(0, 255, 255, 0.1)"/>
-                            <circle cx="140" cy="90" r="20" fill="rgba(0, 255, 255, 0.1)"/>
-                            <text x="100" y="140" text-anchor="middle" fill="#00ffff" font-size="12">Headphone Cross-Section</text>
-                        </svg>
-                    </div>
-                    
                     <div class="wave-graphs">
+                        <!-- Original Wave Canvas -->
                         <div class="graph-container">
-                            <h4>1. Original Noise (Engine Sound)</h4>
-                            <canvas id="noise-original" width="600" height="120"></canvas>
+                            <h4>1. Original Noise Wave (Ambient Sound)</h4>
+                            <canvas id="noise-original" width="800" height="180"></canvas>
                         </div>
                         
-                        <div class="dsp-processor">
-                            <div class="dsp-chip">
-                                <span class="chip-icon">🔌</span>
-                                <span class="chip-label">DSP Chip</span>
-                                <span class="chip-icon">🔌</span>
+                        <!-- Anti-Noise Wave Canvas -->
+                        <div class="graph-container anti-noise">
+                            <h4>2. Anti-Noise Wave (Generated by ANC System)</h4>
+                            <canvas id="noise-inverted" width="800" height="180"></canvas>
+                            <div class="phase-control">
+                                <label for="phase-shift">
+                                    <span class="control-label">Phase Shift:</span>
+                                    <span id="phase-value">180°</span>
+                                </label>
+                                <input type="range" id="phase-shift" min="0" max="360" value="180" step="1">
+                                <div class="phase-markers">
+                                    <span>0°</span>
+                                    <span>90°</span>
+                                    <span>180°</span>
+                                    <span>270°</span>
+                                    <span>360°</span>
+                                </div>
                             </div>
-                            <div class="processing-arrow">↓</div>
-                            <div class="process-label">Inverting Phase...</div>
                         </div>
                         
-                        <div class="graph-container">
-                            <h4>2. Anti-Noise (Inverted Signal)</h4>
-                            <canvas id="noise-inverted" width="600" height="120"></canvas>
-                        </div>
-                        
-                        <div class="combination-arrow">
-                            <div class="arrow-line"></div>
-                            <div class="arrow-label">Superposition</div>
-                        </div>
-                        
+                        <!-- Resultant Wave Canvas -->
                         <div class="graph-container result">
-                            <h4>3. Result: Silence ✨</h4>
-                            <canvas id="noise-result" width="600" height="120"></canvas>
+                            <h4>3. Resultant Wave (Superposition)</h4>
+                            <canvas id="noise-result" width="800" height="180"></canvas>
+                            <div class="result-info">
+                                <span id="cancellation-level">Perfect Cancellation: 100%</span>
+                            </div>
                         </div>
                     </div>
                     
                     <div class="controls">
                         <button id="play-noise" class="action-btn">▶ Play Animation</button>
                         <button id="stop-noise" class="action-btn">⏸ Pause</button>
+                        <button id="reset-phase" class="action-btn">🔄 Reset Phase</button>
+                    </div>
+                    
+                    <div class="info-box">
+                        <h4>💡 How It Works:</h4>
+                        <ul>
+                            <li><strong>Original Wave:</strong> The blue wave represents ambient noise (like engine hum or background chatter)</li>
+                            <li><strong>Anti-Noise Wave:</strong> The purple wave is generated by the ANC microphone and DSP, inverted 180°</li>
+                            <li><strong>Phase Shift Control:</strong> Adjust the slider to see what happens when the anti-noise is not perfectly aligned</li>
+                            <li><strong>Perfect Cancellation:</strong> At 180° phase shift, the waves completely cancel each other out!</li>
+                        </ul>
                     </div>
                 </div>
             </div>
