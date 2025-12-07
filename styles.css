@@ -905,7 +905,6 @@ body::before {
     background: white;
     display: block;
     margin: 0 auto;
-    touch-action: none;
     width: auto !important;
     height: auto !important;
     max-width: 100%;
@@ -2050,11 +2049,17 @@ body::before {
         height: 28px;
     }
 
-    /* Better canvas touch handling */
+    /* Better canvas touch handling - allow scrolling on most canvases */
     canvas {
-        touch-action: none;
+        touch-action: pan-y;
         -webkit-user-select: none;
         user-select: none;
+    }
+    
+    /* Only prevent scrolling on interactive canvases */
+    #qr-damaged,
+    #globe-canvas {
+        touch-action: none;
     }
 
     /* Optimize phase control for mobile */
