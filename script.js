@@ -25,10 +25,15 @@ function setupHighDPICanvas(canvas, width, height) {
 
 // Helper function to get responsive QR canvas size
 function getQRCanvasSize() {
+    const container = document.querySelector('.qr-display');
+    if (!container) return 300;
+    
+    const containerWidth = container.clientWidth;
     const isMobile = window.innerWidth <= 768;
+    
     if (isMobile) {
-        // On mobile, use smaller size that fits better
-        const maxSize = Math.min(280, window.innerWidth - 80);
+        // On mobile, use container width minus padding
+        const maxSize = Math.min(300, containerWidth - 60);
         return Math.floor(maxSize);
     }
     return 300;

@@ -730,7 +730,8 @@ body::before {
     background: white;
     box-shadow: 0 0 30px rgba(0, 255, 255, 0.3), 0 8px 20px rgba(0, 0, 0, 0.4);
     transition: all 0.3s ease;
-    max-width: 100%;
+    width: 100%;
+    max-width: 300px;
     height: auto;
 }
 
@@ -853,8 +854,8 @@ body::before {
 }
 
 .qr-pair {
-    display: grid;
-    grid-template-columns: 1fr auto 1fr;
+    display: flex;
+    flex-direction: column;
     gap: 2rem;
     align-items: center;
     margin-bottom: 2rem;
@@ -873,6 +874,8 @@ body::before {
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     transition: all 0.4s ease;
+    width: 100%;
+    max-width: 450px;
 }
 
 .qr-display:hover {
@@ -901,7 +904,8 @@ body::before {
     border-radius: 10px;
     background: white;
     display: block;
-    max-width: 100%;
+    width: 100%;
+    max-width: 300px;
     height: auto;
     touch-action: none;
 }
@@ -925,6 +929,8 @@ body::before {
     flex-direction: column;
     align-items: center;
     gap: 1rem;
+    width: 100%;
+    max-width: 400px;
 }
 
 .arrow-body {
@@ -2064,10 +2070,6 @@ body::before {
         padding: 1rem;
     }
 
-    .qr-pair {
-        gap: 1rem;
-    }
-
     canvas {
         max-width: 100% !important;
     }
@@ -2077,10 +2079,10 @@ body::before {
         flex-direction: column;
         gap: 1.5rem;
     }
-
-    .qr-pair {
-        flex-direction: column;
-        align-items: center;
+    
+    .qr-display {
+        max-width: 100%;
+        padding: 1.5rem;
     }
 
     /* Optimize flow boxes for mobile */
