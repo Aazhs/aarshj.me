@@ -1,0 +1,506 @@
+[
+  {
+    "event": "page_view",
+    "path": "/",
+    "referrer": "http://localhost:3000/",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.1 Safari/605.1.15",
+    "timestamp": "2025-12-07T13:29:34.683Z"
+  },
+  {
+    "event": "page_view",
+    "path": "/",
+    "referrer": "http://localhost:3000/",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.1 Safari/605.1.15",
+    "timestamp": "2025-12-07T13:29:34.678Z"
+  },
+  {
+    "event": "page_view",
+    "path": "/gps",
+    "referrer": "http://localhost:3000/",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.1 Safari/605.1.15",
+    "timestamp": "2025-12-07T13:29:52.207Z"
+  },
+  {
+    "event": "page_view",
+    "path": "/gps",
+    "referrer": "http://localhost:3000/",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.1 Safari/605.1.15",
+    "timestamp": "2025-12-07T13:29:52.210Z"
+  },
+  {
+    "event": "page_view",
+    "path": "/",
+    "referrer": "",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.1 Safari/605.1.15",
+    "timestamp": "2025-12-07T13:35:11.840Z"
+  },
+  {
+    "event": "page_view",
+    "path": "/",
+    "referrer": "",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.1 Safari/605.1.15",
+    "timestamp": "2025-12-07T13:35:11.835Z"
+  },
+  {
+    "event": "page_view",
+    "path": "/admin",
+    "referrer": "",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.1 Safari/605.1.15",
+    "timestamp": "2025-12-07T13:35:36.280Z"
+  },
+  {
+    "event": "page_view",
+    "path": "/admin",
+    "referrer": "",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.1 Safari/605.1.15",
+    "timestamp": "2025-12-07T13:35:36.284Z"
+  },
+  {
+    "event": "page_view",
+    "path": "/admin",
+    "referrer": "",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.1 Safari/605.1.15",
+    "timestamp": "2025-12-07T13:55:57.420Z"
+  },
+  {
+    "event": "page_view",
+    "path": "/admin",
+    "referrer": "",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.1 Safari/605.1.15",
+    "timestamp": "2025-12-07T13:55:57.425Z"
+  },
+  {
+    "event": "page_view",
+    "path": "/",
+    "referrer": "",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.1 Safari/605.1.15",
+    "timestamp": "2025-12-07T13:57:21.707Z"
+  },
+  {
+    "event": "page_view",
+    "path": "/",
+    "referrer": "",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.1 Safari/605.1.15",
+    "timestamp": "2025-12-07T13:57:21.695Z"
+  },
+  {
+    "event": "page_view",
+    "path": "/",
+    "referrer": "",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.1 Safari/605.1.15",
+    "timestamp": "2025-12-07T13:57:28.493Z"
+  },
+  {
+    "event": "page_view",
+    "path": "/",
+    "referrer": "",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.1 Safari/605.1.15",
+    "timestamp": "2025-12-07T13:57:28.496Z"
+  },
+  {
+    "event": "page_view",
+    "path": "/admin",
+    "referrer": "",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.1 Safari/605.1.15",
+    "timestamp": "2025-12-07T13:57:29.839Z"
+  },
+  {
+    "event": "page_view",
+    "path": "/admin",
+    "referrer": "",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.1 Safari/605.1.15",
+    "timestamp": "2025-12-07T13:57:29.842Z"
+  },
+  {
+    "event": "page_view",
+    "path": "/",
+    "referrer": "",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.1 Safari/605.1.15",
+    "timestamp": "2025-12-07T13:59:07.324Z"
+  },
+  {
+    "event": "page_view",
+    "path": "/",
+    "referrer": "",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.1 Safari/605.1.15",
+    "timestamp": "2025-12-07T13:59:07.322Z"
+  },
+  {
+    "event": "page_view",
+    "path": "/",
+    "referrer": "",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.1 Safari/605.1.15",
+    "timestamp": "2025-12-07T13:59:19.179Z"
+  },
+  {
+    "event": "page_view",
+    "path": "/",
+    "referrer": "",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.1 Safari/605.1.15",
+    "timestamp": "2025-12-07T13:59:19.184Z"
+  },
+  {
+    "event": "page_view",
+    "path": "/",
+    "referrer": "",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.1 Safari/605.1.15",
+    "timestamp": "2025-12-07T13:59:21.429Z"
+  },
+  {
+    "event": "page_view",
+    "path": "/",
+    "referrer": "",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.1 Safari/605.1.15",
+    "timestamp": "2025-12-07T13:59:21.432Z"
+  },
+  {
+    "event": "page_view",
+    "path": "/admin",
+    "referrer": "",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.1 Safari/605.1.15",
+    "timestamp": "2025-12-07T13:59:22.615Z"
+  },
+  {
+    "event": "page_view",
+    "path": "/admin",
+    "referrer": "",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.1 Safari/605.1.15",
+    "timestamp": "2025-12-07T13:59:22.618Z"
+  },
+  {
+    "event": "page_view",
+    "path": "/",
+    "referrer": "",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.1 Safari/605.1.15",
+    "timestamp": "2025-12-07T14:00:23.006Z"
+  },
+  {
+    "event": "page_view",
+    "path": "/",
+    "referrer": "",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.1 Safari/605.1.15",
+    "timestamp": "2025-12-07T14:00:23.003Z"
+  },
+  {
+    "event": "page_view",
+    "path": "/admin",
+    "referrer": "",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.1 Safari/605.1.15",
+    "timestamp": "2025-12-07T14:00:26.644Z"
+  },
+  {
+    "event": "page_view",
+    "path": "/admin",
+    "referrer": "",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.1 Safari/605.1.15",
+    "timestamp": "2025-12-07T14:00:26.647Z"
+  },
+  {
+    "event": "page_view",
+    "path": "/",
+    "referrer": "http://localhost:3000/",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.1 Safari/605.1.15",
+    "timestamp": "2025-12-07T14:07:43.357Z"
+  },
+  {
+    "event": "page_view",
+    "path": "/",
+    "referrer": "http://localhost:3000/",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.1 Safari/605.1.15",
+    "timestamp": "2025-12-07T14:07:43.353Z"
+  },
+  {
+    "event": "page_view",
+    "path": "/",
+    "referrer": "http://localhost:3000/",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.1 Safari/605.1.15",
+    "timestamp": "2025-12-07T14:14:43.989Z"
+  },
+  {
+    "event": "page_view",
+    "path": "/",
+    "referrer": "http://localhost:3000/",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.1 Safari/605.1.15",
+    "timestamp": "2025-12-07T14:14:43.985Z"
+  },
+  {
+    "event": "page_view",
+    "path": "/noise",
+    "referrer": "http://localhost:3000/",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.1 Safari/605.1.15",
+    "timestamp": "2025-12-07T14:16:00.585Z"
+  },
+  {
+    "event": "page_view",
+    "path": "/noise",
+    "referrer": "http://localhost:3000/",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.1 Safari/605.1.15",
+    "timestamp": "2025-12-07T14:16:00.564Z"
+  },
+  {
+    "event": "page_view",
+    "path": "/gps",
+    "referrer": "http://localhost:3000/",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.1 Safari/605.1.15",
+    "timestamp": "2025-12-07T14:18:07.153Z"
+  },
+  {
+    "event": "page_view",
+    "path": "/gps",
+    "referrer": "http://localhost:3000/",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.1 Safari/605.1.15",
+    "timestamp": "2025-12-07T14:18:07.148Z"
+  },
+  {
+    "event": "page_view",
+    "path": "/noise",
+    "referrer": "http://localhost:3000/",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.1 Safari/605.1.15",
+    "timestamp": "2025-12-07T14:19:25.857Z"
+  },
+  {
+    "event": "page_view",
+    "path": "/noise",
+    "referrer": "http://localhost:3000/",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.1 Safari/605.1.15",
+    "timestamp": "2025-12-07T14:19:25.868Z"
+  },
+  {
+    "event": "page_view",
+    "path": "/noise",
+    "referrer": "http://localhost:3000/",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.1 Safari/605.1.15",
+    "timestamp": "2025-12-07T14:19:45.461Z"
+  },
+  {
+    "event": "page_view",
+    "path": "/noise",
+    "referrer": "http://localhost:3000/",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.1 Safari/605.1.15",
+    "timestamp": "2025-12-07T14:19:45.470Z"
+  },
+  {
+    "event": "page_view",
+    "path": "/noise",
+    "referrer": "http://localhost:3000/noise",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.1 Safari/605.1.15",
+    "timestamp": "2025-12-07T14:23:17.151Z"
+  },
+  {
+    "event": "page_view",
+    "path": "/noise",
+    "referrer": "http://localhost:3000/noise",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.1 Safari/605.1.15",
+    "timestamp": "2025-12-07T14:23:17.139Z"
+  },
+  {
+    "event": "page_view",
+    "path": "/noise",
+    "referrer": "http://localhost:3000/noise",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.1 Safari/605.1.15",
+    "timestamp": "2025-12-07T14:23:18.490Z"
+  },
+  {
+    "event": "page_view",
+    "path": "/noise",
+    "referrer": "http://localhost:3000/noise",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.1 Safari/605.1.15",
+    "timestamp": "2025-12-07T14:23:18.495Z"
+  },
+  {
+    "event": "page_view",
+    "path": "/noise",
+    "referrer": "http://localhost:3000/noise",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.1 Safari/605.1.15",
+    "timestamp": "2025-12-07T14:23:19.576Z"
+  },
+  {
+    "event": "page_view",
+    "path": "/noise",
+    "referrer": "http://localhost:3000/noise",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.1 Safari/605.1.15",
+    "timestamp": "2025-12-07T14:23:19.580Z"
+  },
+  {
+    "event": "page_view",
+    "path": "/noise",
+    "referrer": "http://localhost:3000/noise",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.1 Safari/605.1.15",
+    "timestamp": "2025-12-07T14:23:28.058Z"
+  },
+  {
+    "event": "page_view",
+    "path": "/noise",
+    "referrer": "http://localhost:3000/noise",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.1 Safari/605.1.15",
+    "timestamp": "2025-12-07T14:23:28.075Z"
+  },
+  {
+    "event": "page_view",
+    "path": "/noise",
+    "referrer": "http://localhost:3000/noise",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.1 Safari/605.1.15",
+    "timestamp": "2025-12-07T14:24:21.166Z"
+  },
+  {
+    "event": "page_view",
+    "path": "/noise",
+    "referrer": "http://localhost:3000/noise",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.1 Safari/605.1.15",
+    "timestamp": "2025-12-07T14:24:21.282Z"
+  },
+  {
+    "event": "page_view",
+    "path": "/noise",
+    "referrer": "http://localhost:3000/noise",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.1 Safari/605.1.15",
+    "timestamp": "2025-12-07T14:27:51.199Z"
+  },
+  {
+    "event": "page_view",
+    "path": "/noise",
+    "referrer": "http://localhost:3000/noise",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.1 Safari/605.1.15",
+    "timestamp": "2025-12-07T14:27:51.179Z"
+  },
+  {
+    "event": "page_view",
+    "path": "/noise",
+    "referrer": "http://localhost:3000/noise",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.1 Safari/605.1.15",
+    "timestamp": "2025-12-07T14:33:00.501Z"
+  },
+  {
+    "event": "page_view",
+    "path": "/noise",
+    "referrer": "http://localhost:3000/noise",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.1 Safari/605.1.15",
+    "timestamp": "2025-12-07T14:33:00.514Z"
+  },
+  {
+    "event": "page_view",
+    "path": "/gps",
+    "referrer": "http://localhost:3000/noise",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.1 Safari/605.1.15",
+    "timestamp": "2025-12-07T14:36:56.962Z"
+  },
+  {
+    "event": "page_view",
+    "path": "/gps",
+    "referrer": "http://localhost:3000/noise",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.1 Safari/605.1.15",
+    "timestamp": "2025-12-07T14:36:56.955Z"
+  },
+  {
+    "event": "page_view",
+    "path": "/gps",
+    "referrer": "http://localhost:3000/noise",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.1 Safari/605.1.15",
+    "timestamp": "2025-12-07T14:37:59.422Z"
+  },
+  {
+    "event": "page_view",
+    "path": "/gps",
+    "referrer": "http://localhost:3000/noise",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.1 Safari/605.1.15",
+    "timestamp": "2025-12-07T14:37:59.434Z"
+  },
+  {
+    "event": "page_view",
+    "path": "/gps",
+    "referrer": "http://localhost:3000/noise",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.1 Safari/605.1.15",
+    "timestamp": "2025-12-07T14:38:55.048Z"
+  },
+  {
+    "event": "page_view",
+    "path": "/gps",
+    "referrer": "http://localhost:3000/noise",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.1 Safari/605.1.15",
+    "timestamp": "2025-12-07T14:38:55.052Z"
+  },
+  {
+    "event": "page_view",
+    "path": "/gps",
+    "referrer": "http://localhost:3000/noise",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.1 Safari/605.1.15",
+    "timestamp": "2025-12-07T14:40:22.542Z"
+  },
+  {
+    "event": "page_view",
+    "path": "/gps",
+    "referrer": "http://localhost:3000/noise",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.1 Safari/605.1.15",
+    "timestamp": "2025-12-07T14:40:22.539Z"
+  },
+  {
+    "event": "page_view",
+    "path": "/gps",
+    "referrer": "http://localhost:3000/noise",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.1 Safari/605.1.15",
+    "timestamp": "2025-12-07T14:46:16.995Z"
+  },
+  {
+    "event": "page_view",
+    "path": "/gps",
+    "referrer": "http://localhost:3000/noise",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.1 Safari/605.1.15",
+    "timestamp": "2025-12-07T14:46:16.988Z"
+  },
+  {
+    "event": "page_view",
+    "path": "/noise",
+    "referrer": "http://localhost:3000/noise",
+    "userAgent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Mobile Safari/537.36",
+    "timestamp": "2025-12-07T14:51:40.819Z"
+  },
+  {
+    "event": "page_view",
+    "path": "/noise",
+    "referrer": "http://localhost:3000/noise",
+    "userAgent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Mobile Safari/537.36",
+    "timestamp": "2025-12-07T14:51:40.800Z"
+  },
+  {
+    "event": "page_view",
+    "path": "/gps",
+    "referrer": "http://localhost:3000/noise",
+    "userAgent": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Mobile/15E148 Safari/604.1",
+    "timestamp": "2025-12-07T14:51:58.766Z"
+  },
+  {
+    "event": "page_view",
+    "path": "/gps",
+    "referrer": "http://localhost:3000/noise",
+    "userAgent": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Mobile/15E148 Safari/604.1",
+    "timestamp": "2025-12-07T14:51:58.774Z"
+  },
+  {
+    "event": "page_view",
+    "path": "/",
+    "referrer": "http://localhost:3000/noise",
+    "userAgent": "Mozilla/5.0 (Android 15; Mobile; rv:140.0) Gecko/140.0 Firefox/140.0",
+    "timestamp": "2025-12-07T14:52:36.311Z"
+  },
+  {
+    "event": "page_view",
+    "path": "/",
+    "referrer": "http://localhost:3000/noise",
+    "userAgent": "Mozilla/5.0 (Android 15; Mobile; rv:140.0) Gecko/140.0 Firefox/140.0",
+    "timestamp": "2025-12-07T14:52:36.313Z"
+  },
+  {
+    "event": "page_view",
+    "path": "/",
+    "referrer": "http://localhost:3000/noise",
+    "userAgent": "Mozilla/5.0 (Android 15; Mobile; rv:140.0) Gecko/140.0 Firefox/140.0",
+    "timestamp": "2025-12-07T14:52:38.728Z"
+  },
+  {
+    "event": "page_view",
+    "path": "/",
+    "referrer": "http://localhost:3000/noise",
+    "userAgent": "Mozilla/5.0 (Android 15; Mobile; rv:140.0) Gecko/140.0 Firefox/140.0",
+    "timestamp": "2025-12-07T14:52:38.731Z"
+  }
+]
