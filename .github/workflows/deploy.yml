@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - cde-poster
   workflow_dispatch:
 
 permissions:
