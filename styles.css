@@ -315,7 +315,7 @@ body::before {
     }
 }
 
-.satellite {
+.satellite-group {
     animation: orbit 8s linear infinite;
     transform-origin: 50px 50px;
 }
@@ -730,6 +730,8 @@ body::before {
     background: white;
     box-shadow: 0 0 30px rgba(0, 255, 255, 0.3), 0 8px 20px rgba(0, 0, 0, 0.4);
     transition: all 0.3s ease;
+    max-width: 100%;
+    height: auto;
 }
 
 #qr-canvas:hover {
@@ -899,6 +901,9 @@ body::before {
     border-radius: 10px;
     background: white;
     display: block;
+    max-width: 100%;
+    height: auto;
+    touch-action: none;
 }
 
 .hint {

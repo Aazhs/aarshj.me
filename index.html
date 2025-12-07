@@ -90,9 +90,15 @@
                         <circle cx="50" cy="50" r="20" fill="none" stroke="currentColor" stroke-width="1" opacity="0.5"/>
                         <ellipse cx="50" cy="50" rx="30" ry="10" fill="none" stroke="currentColor" stroke-width="1" opacity="0.5"/>
                         <ellipse cx="50" cy="50" rx="10" ry="30" fill="none" stroke="currentColor" stroke-width="1" opacity="0.5"/>
-                        <circle class="satellite sat-1" cx="50" cy="20" r="3" fill="#00ffff"/>
-                        <circle class="satellite sat-2" cx="80" cy="50" r="3" fill="#00ffff"/>
-                        <circle class="satellite sat-3" cx="50" cy="80" r="3" fill="#00ffff"/>
+                        <g class="satellite-group sat-1">
+                            <circle cx="50" cy="20" r="3" fill="#00ffff"/>
+                        </g>
+                        <g class="satellite-group sat-2">
+                            <circle cx="80" cy="50" r="3" fill="#00ffff"/>
+                        </g>
+                        <g class="satellite-group sat-3">
+                            <circle cx="50" cy="80" r="3" fill="#00ffff"/>
+                        </g>
                         <circle cx="50" cy="50" r="4" fill="#9d00ff"/>
                     </svg>
                 </div>
@@ -168,7 +174,7 @@
                     
                     <div class="qr-display-section">
                         <div class="qr-main-display">
-                            <canvas id="qr-canvas" width="300" height="300"></canvas>
+                            <canvas id="qr-canvas"></canvas>
                             <div class="qr-info">
                                 <span id="qr-size-info">Size: --</span>
                                 <span id="qr-capacity-info">Capacity: --</span>
@@ -215,7 +221,7 @@
                         <div class="qr-pair">
                             <div class="qr-display interactive">
                                 <h4>Interactive Damage (Click to toggle cells)</h4>
-                                <canvas id="qr-damaged" width="300" height="300"></canvas>
+                                <canvas id="qr-damaged"></canvas>
                                 <p class="hint">💡 Click on cells to damage/repair them</p>
                             </div>
                             
@@ -233,7 +239,7 @@
                             
                             <div class="qr-display">
                                 <h4>Recovered QR Code</h4>
-                                <canvas id="qr-corrected" width="300" height="300"></canvas>
+                                <canvas id="qr-corrected"></canvas>
                                 <p id="scan-status" class="scan-status">Awaiting correction...</p>
                             </div>
                         </div>
@@ -266,6 +272,7 @@
                     <div class="controls">
                         <label for="terms-slider">Number of Terms: <span id="terms-value">1</span></label>
                         <input type="range" id="terms-slider" min="1" max="9" value="1" step="1">
+                        <button id="reset-taylor" class="action-btn">🔄 Reset</button>
                     </div>
                     <div id="taylor-formula" class="formula-display"></div>
                 </div>

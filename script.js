@@ -23,6 +23,17 @@ function setupHighDPICanvas(canvas, width, height) {
     return ctx;
 }
 
+// Helper function to get responsive QR canvas size
+function getQRCanvasSize() {
+    const isMobile = window.innerWidth <= 768;
+    if (isMobile) {
+        // On mobile, use smaller size that fits better
+        const maxSize = Math.min(280, window.innerWidth - 80);
+        return Math.floor(maxSize);
+    }
+    return 300;
+}
+
 // QR Code library - using real QR code generation
 class QRCodeGenerator {
     static generate(text) {
@@ -292,6 +303,17 @@ function initQRVisualization() {
     // Generate initial QR code
     generateQRCode();
     
+    // Handle window resize to regenerate QR codes with new size
+    let resizeTimeout;
+    window.addEventListener('resize', () => {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(() => {
+            if (qrMatrix) {
+                generateQRCode();
+            }
+        }, 250);
+    });
+    
     // Event listeners
     textInput.addEventListener('input', (e) => {
         currentText = e.target.value || 'Empty';
@@ -326,6 +348,7 @@ function initQRVisualization() {
     // Interactive canvas clicking
     qrDamaged.addEventListener('click', handleQRClick);
     qrDamaged.addEventListener('touchstart', handleQRTouch, { passive: false });
+    qrDamaged.addEventListener('touchmove', handleQRTouchMove, { passive: false });
     
     function generateQRCode() {
         damagedCells.clear();
@@ -357,11 +380,16 @@ function initQRVisualization() {
             setTimeout(() => {
                 const qrCanvasTemp = tempDiv.querySelector('canvas');
                 if (qrCanvasTemp) {
+                    // Get responsive size
+                    const canvasSize = getQRCanvasSize();
+                    qrCanvas.width = canvasSize;
+                    qrCanvas.height = canvasSize;
+                    
                     // Draw to main canvas
                     const ctx = qrCanvas.getContext('2d');
                     ctx.fillStyle = '#ffffff';
-                    ctx.fillRect(0, 0, 300, 300);
-                    ctx.drawImage(qrCanvasTemp, 0, 0, 300, 300);
+                    ctx.fillRect(0, 0, canvasSize, canvasSize);
+                    ctx.drawImage(qrCanvasTemp, 0, 0, canvasSize, canvasSize);
                     
                     // Extract matrix
                     qrMatrix = QRCodeGenerator.canvasToMatrix(qrCanvasTemp);
@@ -370,13 +398,19 @@ function initQRVisualization() {
                     document.getElementById('qr-size-info').textContent = `Size: ${qrMatrix.length}x${qrMatrix.length}`;
                     document.getElementById('qr-capacity-info').textContent = `Capacity: ${currentText.length} chars`;
                     
+                    // Set size for other canvases
+                    qrDamaged.width = canvasSize;
+                    qrDamaged.height = canvasSize;
+                    qrCorrected.width = canvasSize;
+                    qrCorrected.height = canvasSize;
+                    
                     // Draw to damaged canvas (undamaged initially)
                     drawQRWithDamage();
                     
                     // Clear corrected canvas
                     const ctxCorrected = qrCorrected.getContext('2d');
                     ctxCorrected.fillStyle = '#f0f0f0';
-                    ctxCorrected.fillRect(0, 0, 300, 300);
+                    ctxCorrected.fillRect(0, 0, canvasSize, canvasSize);
                     scanStatusP.textContent = 'Awaiting correction...';
                     scanStatusP.style.color = 'rgba(255,255,255,0.6)';
                 }
@@ -392,8 +426,10 @@ function initQRVisualization() {
         if (!qrMatrix) return;
         
         const rect = qrDamaged.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
+        const scaleX = qrDamaged.width / rect.width;
+        const scaleY = qrDamaged.height / rect.height;
+        const x = (e.clientX - rect.left) * scaleX;
+        const y = (e.clientY - rect.top) * scaleY;
         
         toggleQRCell(x, y);
     }
@@ -403,17 +439,33 @@ function initQRVisualization() {
         e.preventDefault();
         
         const rect = qrDamaged.getBoundingClientRect();
+        const scaleX = qrDamaged.width / rect.width;
+        const scaleY = qrDamaged.height / rect.height;
+        const touch = e.touches[0];
+        const x = (touch.clientX - rect.left) * scaleX;
+        const y = (touch.clientY - rect.top) * scaleY;
+        
+        toggleQRCell(x, y);
+    }
+    
+    function handleQRTouchMove(e) {
+        if (!qrMatrix) return;
+        e.preventDefault();
+        
+        const rect = qrDamaged.getBoundingClientRect();
         const touch = e.touches[0];
         const x = touch.clientX - rect.left;
         const y = touch.clientY - rect.top;
         
-        toggleQRCell(x, y);
+        // Don't toggle on move, just handle drag behavior
+        // This prevents accidental toggling while scrolling
     }
     
     function toggleQRCell(x, y) {
         
         const size = qrMatrix.length;
-        const cellSize = 300 / size;
+        const canvasSize = qrDamaged.width;
+        const cellSize = canvasSize / size;
         
         const row = Math.floor(y / cellSize);
         const col = Math.floor(x / cellSize);
@@ -457,8 +509,9 @@ function initQRVisualization() {
         
         // Clear corrected canvas
         const ctxCorrected = qrCorrected.getContext('2d');
+        const canvasSize = qrCorrected.width;
         ctxCorrected.fillStyle = '#f0f0f0';
-        ctxCorrected.fillRect(0, 0, 300, 300);
+        ctxCorrected.fillRect(0, 0, canvasSize, canvasSize);
         scanStatusP.textContent = 'Awaiting correction...';
         scanStatusP.style.color = 'rgba(255,255,255,0.6)';
     }
@@ -467,11 +520,12 @@ function initQRVisualization() {
         if (!qrMatrix) return;
         
         const ctx = qrDamaged.getContext('2d');
+        const canvasSize = qrDamaged.width;
         const size = qrMatrix.length;
-        const cellSize = 300 / size;
+        const cellSize = canvasSize / size;
         
         ctx.fillStyle = '#ffffff';
-        ctx.fillRect(0, 0, 300, 300);
+        ctx.fillRect(0, 0, canvasSize, canvasSize);
         
         for (let i = 0; i < size; i++) {
             for (let j = 0; j < size; j++) {
@@ -563,9 +617,10 @@ function initQRVisualization() {
                 const qrCanvasTemp = tempDiv.querySelector('canvas');
                 if (qrCanvasTemp) {
                     const ctx = qrCorrected.getContext('2d');
+                    const canvasSize = qrCorrected.width;
                     ctx.fillStyle = '#ffffff';
-                    ctx.fillRect(0, 0, 300, 300);
-                    ctx.drawImage(qrCanvasTemp, 0, 0, 300, 300);
+                    ctx.fillRect(0, 0, canvasSize, canvasSize);
+                    ctx.drawImage(qrCanvasTemp, 0, 0, canvasSize, canvasSize);
                     
                     // Determine success
                     const size = qrMatrix.length;
@@ -610,6 +665,7 @@ function initTaylorVisualization() {
     const binaryInput = document.getElementById('binary-input');
     const cpuResult = document.getElementById('result-value');
     const errorTbody = document.getElementById('error-tbody');
+    const resetBtn = document.getElementById('reset-taylor');
     
     // Set canvas size for mobile
     resizeTaylorCanvas();
@@ -622,6 +678,15 @@ function initTaylorVisualization() {
         updateFormula(formulaDisplay, terms);
         animateCPU(terms);
         updateErrorTable(errorTbody, terms);
+    });
+    
+    resetBtn.addEventListener('click', () => {
+        slider.value = 1;
+        termsValue.textContent = 1;
+        drawTaylorSeries(canvas, 1);
+        updateFormula(formulaDisplay, 1);
+        animateCPU(1);
+        updateErrorTable(errorTbody, 1);
     });
     
     // Initial draw
