@@ -732,6 +732,9 @@ body::before {
     transition: all 0.3s ease;
     display: block;
     margin: 0 auto;
+    width: auto !important;
+    height: auto !important;
+    max-width: 100%;
 }
 
 #qr-canvas:hover {
@@ -904,6 +907,9 @@ body::before {
     display: block;
     margin: 0 auto;
     touch-action: none;
+    width: auto !important;
+    height: auto !important;
+    max-width: 100%;
 }
 
 .hint {
