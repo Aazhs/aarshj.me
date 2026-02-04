@@ -4,11 +4,10 @@ body{
 }
 
 .name-card{
-  margin-top: 100px;
+  margin-top: 203px;
   text-align: center;
-  margin-bottom: 203px;
+  margin-bottom: 300px;
 }
-
 .name{
   font-size: 45px;
 }
@@ -17,9 +16,92 @@ body{
   border-radius: 100px;
   box-shadow: 0 0 30px 10px rgba(255, 255, 255, 0.4);
   object-fit: cover;
+  transition: box-shadow 0.3s ease;
+}
+.profile-pic:hover{
+  box-shadow: 0 0 60px 20px rgba(255, 255, 255, 0.606);
 }
 
 .info{
   padding: 20px;
   background-color: rgb(45, 43, 43);
+  padding-bottom: 100px;
+}
+
+.info-boxes{
+  display: flex;
+  gap: 40px;
+  margin-top: 20px;
+  justify-content:center;
+}
+
+.box{
+  flex: 1;
+  max-width: 500px;
+  padding: 35px;
+  background-color: rgb(32, 31, 31);
+  border-radius: 20px;
+  border: 2px solid rgb(170, 129, 240);
+}
+
+.college{
+  display: flex;
+  align-items: center;
+  gap: 30px;
+}
+
+.quickfacts{
+  margin: 50px auto 0 auto;
+  max-width: 1180px;
+  text-align: center;
+  padding: 5px;
+  background-color: rgb(32, 31, 31);
+  border-radius: 20px;
+  border: 2px solid rgb(170, 129, 240);
+}
+
+.facts{
+  display: flex;
+  align-items: center;
+  gap: 30px;
+  margin-bottom: 20px;
+}
+
+.fact{
+  flex: 1;
+}
+
+.factBig{
+  font-size: 30px;
+  margin-bottom: 1px;
+  color: rgb(170, 129, 240);
+}
+
+.hobbies{
+  margin-top: 50px;
+  padding: 40px 20px;
+
+}
+
+.hobby-grid{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.hobby-box{
+  margin-left: 20px;
+  flex: 1;
+  min-width: 250px;
+  max-width: 250px;
+  justify-content: center;
+  background-color: rgb(32, 31, 31);
+  border: 2px solid rgb(170, 129, 240);
+  border-radius: 15px;
+  text-align: center;
+  min-height: 100px;
+
+  padding: 20px;
+  display: flex;
+  gap: 20px;
 }
