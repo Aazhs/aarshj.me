@@ -6,12 +6,10 @@ body{
 .name-card{
   padding-top: 203px;
   text-align: center;
-  padding-bottom: 00px;
   background-image: url('assets/background.png');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  background-attachment: scroll;
   min-height: 100vh;
   box-sizing: border-box;
   overflow: hidden;
