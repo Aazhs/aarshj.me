@@ -22,19 +22,12 @@ body{
   width: 180px;
   height: 180px;
   margin: 0 auto 50px auto;
-  border-radius: 60% 40% 50% 50% / 50% 60% 40% 50%;
-  background: linear-gradient(135deg, rgb(170, 129, 240), rgb(120, 80, 200), rgb(200, 160, 255));
-  background-size: 300% 300%;
-  animation: blobMove 8s ease-in-out infinite, blobGradient 6s ease infinite;
+  border-radius: 50%;
+  background-color: rgb(170, 129, 240);
   display: flex;
   align-items: center;
   justify-content: center;
   box-shadow: 0 0 30px 10px rgba(170, 129, 240, 0.4);
-  transition: box-shadow 0.3s ease;
-}
-
-.blob:hover{
-  box-shadow: 0 0 60px 20px rgba(170, 129, 240, 0.6);
 }
 
 .blob-initials{
@@ -42,20 +35,6 @@ body{
   font-weight: bold;
   color: rgb(32, 31, 31);
   user-select: none;
-}
-
-@keyframes blobMove{
-  0%   { border-radius: 60% 40% 50% 50% / 50% 60% 40% 50%; }
-  25%  { border-radius: 40% 60% 50% 50% / 60% 40% 50% 50%; }
-  50%  { border-radius: 50% 50% 40% 60% / 50% 50% 60% 40%; }
-  75%  { border-radius: 60% 40% 60% 40% / 40% 60% 40% 60%; }
-  100% { border-radius: 60% 40% 50% 50% / 50% 60% 40% 50%; }
-}
-
-@keyframes blobGradient{
-  0%   { background-position: 0% 50%; }
-  50%  { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
 }
 
 .info{
