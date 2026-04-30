@@ -330,8 +330,8 @@ function App() {
               <span>Builds polished web experiences and practical dev tools.</span>
             </h1>
             <p className="lede">
-              Linux-first tinkerer with a strong frontend eye, currently deepening React, DSA,
-              and system-level C++ while shipping useful products.
+              Linux-first tinkerer with a strong frontend eye, currently leveling up React,
+              Go, backend fundamentals, DSA, and system-level C++ while shipping useful products.
             </p>
             <div className="cta-row">
               <a className="btn btn-primary" href="https://github.com/Aazhs" target="_blank" rel="noreferrer">
