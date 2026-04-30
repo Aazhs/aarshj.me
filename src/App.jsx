@@ -119,6 +119,8 @@ public:
 const getLinkProps = (href) =>
   href.startsWith('mailto:') ? {} : { target: '_blank', rel: 'noreferrer' };
 const cpLinkIconByLabel = Object.fromEntries(cpLinks.map((item) => [item.label, item.icon]));
+const CODECHEF_RATING = '1178';
+const CODECHEF_META = 'Current rating';
 
 const hiddenRepoNames = new Set(['aazhs', 'skills-introduction-to-github', 'random', 'mincraft']);
 
@@ -158,7 +160,7 @@ function App() {
   const [repos, setRepos] = useState([]);
   const [cpStats, setCpStats] = useState({
     leetcode: { rating: 'Loading...', meta: 'Fetching live data' },
-    codechef: { rating: 'Loading...', meta: 'Fetching live data' },
+    codechef: { rating: CODECHEF_RATING, meta: CODECHEF_META },
     codeforces: { rating: 'Loading...', meta: 'Fetching live data' }
   });
 
@@ -207,16 +209,10 @@ function App() {
       }
     };
 
-    const extractCodechefRating = (rawRating) => {
-      const match = String(rawRating || '').match(/\d{3,4}/);
-      return match ? match[0] : 'Unrated';
-    };
-
     const loadCompetitiveRatings = async () => {
       try {
-        const [cfData, ccData, lcSolvedData] = await Promise.allSettled([
+        const [cfData, lcSolvedData] = await Promise.allSettled([
           withTimeout('https://codeforces.com/api/user.info?handles=Aashj'),
-          withTimeout('https://coding-cards.vercel.app/api/codechef-stats?userName=aashz'),
           withTimeout('https://alfa-leetcode-api.onrender.com/Aashz/solved')
         ]);
 
@@ -226,7 +222,7 @@ function App() {
 
         const nextStats = {
           codeforces: { rating: 'N/A', meta: 'Profile unavailable' },
-          codechef: { rating: 'N/A', meta: 'Profile unavailable' },
+          codechef: { rating: CODECHEF_RATING, meta: CODECHEF_META },
           leetcode: { rating: 'N/A', meta: 'Solved count unavailable' }
         };
 
@@ -235,16 +231,6 @@ function App() {
           nextStats.codeforces = {
             rating: `${user.rating ?? 'Unrated'}`,
             meta: `Max ${user.maxRating ?? user.rating ?? '-'} · ${user.rank ?? 'user'}`
-          };
-        }
-
-        if (ccData.status === 'fulfilled') {
-          const data = ccData.value;
-          const rating = extractCodechefRating(data?.currentrating);
-          const stars = (data?.stars || '').toString().trim();
-          nextStats.codechef = {
-            rating,
-            meta: stars ? `${stars} · ${data?.participatedContests ?? '-'} contests` : 'Contest profile'
           };
         }
 
@@ -265,7 +251,7 @@ function App() {
         }
         setCpStats({
           leetcode: { rating: 'N/A', meta: 'API unavailable' },
-          codechef: { rating: 'N/A', meta: 'API unavailable' },
+          codechef: { rating: CODECHEF_RATING, meta: CODECHEF_META },
           codeforces: { rating: 'N/A', meta: 'API unavailable' }
         });
       }
