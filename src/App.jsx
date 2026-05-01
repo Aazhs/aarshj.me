@@ -158,6 +158,7 @@ const reveal = {
 
 function App() {
   const [repos, setRepos] = useState([]);
+  const [visitCount, setVisitCount] = useState('...');
   const [cpStats, setCpStats] = useState({
     leetcode: { rating: 'Loading...', meta: 'Fetching live data' },
     codechef: { rating: CODECHEF_RATING, meta: CODECHEF_META },
@@ -187,6 +188,44 @@ function App() {
     }
 
     loadGitHub();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    const storageKey = 'aarsh_unique_visit_recorded_v1';
+    const namespace = 'aazhs-portfolio';
+    const key = 'unique-visits';
+
+    const readVisits = async () => {
+      try {
+        const hasRecordedVisit = localStorage.getItem(storageKey) === '1';
+        const endpoint = hasRecordedVisit
+          ? `https://api.countapi.xyz/get/${namespace}/${key}`
+          : `https://api.countapi.xyz/hit/${namespace}/${key}`;
+        const response = await fetch(endpoint);
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        const data = await response.json();
+        if (!active) {
+          return;
+        }
+        if (!hasRecordedVisit) {
+          localStorage.setItem(storageKey, '1');
+        }
+        const count = Number.isFinite(data?.value) ? data.value : null;
+        setVisitCount(count !== null ? count.toLocaleString('en-US') : 'N/A');
+      } catch {
+        if (active) {
+          setVisitCount('N/A');
+        }
+      }
+    };
+
+    readVisits();
     return () => {
       active = false;
     };
@@ -311,7 +350,11 @@ function App() {
     <div className="page">
       <header className="topbar">
         <a className="brand" href="#home">
-          AJ
+          <span className="brand-mark">AJ</span>
+          <span className="brand-copy">
+            <strong>Aarsh</strong>
+            <small>Portfolio</small>
+          </span>
         </a>
         <nav>
           <a href="#about">About</a>
@@ -523,6 +566,10 @@ function App() {
             </div>
           </motion.div>
         </section>
+
+        <footer className="site-footer">
+          <p>Unique visits: {visitCount}</p>
+        </footer>
       </main>
     </div>
   );
