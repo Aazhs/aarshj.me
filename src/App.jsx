@@ -103,20 +103,6 @@ const fallbackProjects = [
   }
 ];
 
-const codeCard = `class Aazh {
-public:
-  std::string name = "Aarsh Joshi";
-  std::string degree = "B.Tech CS (SY) @ MITAOE, Pune";
-  std::string focus[] = {
-    "React & scalable web apps",
-    "LeetCode + Codeforces grind",
-    "System-level C++ + learning Go/Node backend"
-  };
-
-  std::string currentlyBuilding() {
-    return "Interactive frontends + practical dev tools";
-  }
-};`;
 
 const getLinkProps = (href) =>
   href.startsWith('mailto:') ? {} : { target: '_blank', rel: 'noreferrer' };
@@ -490,7 +476,79 @@ function App() {
                 <span />
                 <span />
               </div>
-              <pre>{codeCard}</pre>
+              <pre className="code-block" aria-label="C++ profile snippet">
+                <code>
+                  <span className="code-keyword">class</span>{' '}
+                  <span className="code-type">Aazh</span>{' '}
+                  <span className="code-punct">&#123;</span>
+                  <br />
+                  <span className="code-indent">{'  '}</span>
+                  <span className="code-keyword">public</span>
+                  <span className="code-punct">:</span>
+                  <br />
+                  <span className="code-indent">{'  '}</span>
+                  <span className="code-namespace">std</span>
+                  <span className="code-punct">::</span>
+                  <span className="code-type">string</span>{' '}
+                  <span className="code-field">name</span>{' '}
+                  <span className="code-operator">=</span>{' '}
+                  <span className="code-string">&quot;Aarsh Joshi&quot;</span>
+                  <span className="code-punct">;</span>
+                  <br />
+                  <span className="code-indent">{'  '}</span>
+                  <span className="code-namespace">std</span>
+                  <span className="code-punct">::</span>
+                  <span className="code-type">string</span>{' '}
+                  <span className="code-field">degree</span>{' '}
+                  <span className="code-operator">=</span>{' '}
+                  <span className="code-string">&quot;B.Tech CS (SY) @ MITAOE, Pune&quot;</span>
+                  <span className="code-punct">;</span>
+                  <br />
+                  <span className="code-indent">{'  '}</span>
+                  <span className="code-namespace">std</span>
+                  <span className="code-punct">::</span>
+                  <span className="code-type">string</span>{' '}
+                  <span className="code-field">focus</span>
+                  <span className="code-punct">[]</span>{' '}
+                  <span className="code-operator">=</span>{' '}
+                  <span className="code-punct">&#123;</span>
+                  <br />
+                  <span className="code-indent">{'    '}</span>
+                  <span className="code-string">&quot;React &amp; scalable web apps&quot;</span>
+                  <span className="code-punct">,</span>
+                  <br />
+                  <span className="code-indent">{'    '}</span>
+                  <span className="code-string">&quot;LeetCode + Codeforces grind&quot;</span>
+                  <span className="code-punct">,</span>
+                  <br />
+                  <span className="code-indent">{'    '}</span>
+                  <span className="code-string">&quot;System-level C++ + learning Go/Node backend&quot;</span>
+                  <br />
+                  <span className="code-indent">{'  '}</span>
+                  <span className="code-punct">&#125;</span>
+                  <span className="code-punct">;</span>
+                  <br />
+                  <br />
+                  <span className="code-indent">{'  '}</span>
+                  <span className="code-namespace">std</span>
+                  <span className="code-punct">::</span>
+                  <span className="code-type">string</span>{' '}
+                  <span className="code-function">currentlyBuilding</span>
+                  <span className="code-punct">()</span>{' '}
+                  <span className="code-punct">&#123;</span>
+                  <br />
+                  <span className="code-indent">{'    '}</span>
+                  <span className="code-keyword">return</span>{' '}
+                  <span className="code-string">&quot;Interactive frontends + practical dev tools&quot;</span>
+                  <span className="code-punct">;</span>
+                  <br />
+                  <span className="code-indent">{'  '}</span>
+                  <span className="code-punct">&#125;</span>
+                  <br />
+                  <span className="code-punct">&#125;</span>
+                  <span className="code-punct">;</span>
+                </code>
+              </pre>
             </motion.article>
 
             <motion.article className="bullet-card" variants={reveal} initial="hidden" whileInView="show" custom={0.2} viewport={{ once: true }}>
@@ -531,7 +589,7 @@ function App() {
         <section className="projects section" id="projects">
           <motion.div className="section-heading" variants={reveal} initial="hidden" whileInView="show" viewport={{ once: true }}>
             <p>Featured Projects</p>
-            <h2>Best repositories picked from all public GitHub projects.</h2>
+            <h2>GitHub projects.</h2>
           </motion.div>
 
           <div className="project-grid">

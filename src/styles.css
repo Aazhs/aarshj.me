@@ -490,7 +490,7 @@ main {
 }
 
 .code-card {
-  padding: 0.88rem;
+  padding: 1.1rem;
 }
 
 .terminal-dots {
@@ -516,17 +516,47 @@ main {
   background: #8cd6a0;
 }
 
-.code-card pre {
-  margin: 0.8rem 0 0;
+.code-block {
+  margin: 0.85rem 0 0;
   color: #d8d6ef;
   font-size: 0.84rem;
-  line-height: 1.64;
+  line-height: 1.7;
   font-family: inherit;
   white-space: pre-wrap;
 }
 
+.code-block code {
+  font-family: inherit;
+}
+
+.code-keyword {
+  color: var(--accent);
+}
+
+.code-type,
+.code-namespace {
+  color: var(--foam);
+}
+
+.code-string {
+  color: var(--peach);
+}
+
+.code-function {
+  color: #f6c177;
+}
+
+.code-operator,
+.code-punct {
+  color: #b9b2d6;
+}
+
+.code-field {
+  color: #e4e0f2;
+}
+
 .bullet-card {
-  padding: 1rem;
+  padding: 1.1rem;
 }
 
 .bullet-card ul {
