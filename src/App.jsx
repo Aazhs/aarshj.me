@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 
+const CONTACT_EMAIL = 'aarshjozhi@gmail.com';
+const CONTACT_FORM_ENDPOINT = 'https://formspree.io/f/xjglvljd';
+
 const socialLinks = [
   { label: 'GitHub', href: 'https://github.com/Aazhs' },
-  { label: 'Portfolio', href: 'https://aarshj.me' },
   { label: 'LinkedIn', href: 'https://www.linkedin.com/in/aarsh-joshi-3b40373aa/' },
-  { label: 'Email', href: 'mailto:aarshjozhi@gmail.com' },
+  { label: 'Email', href: `mailto:${CONTACT_EMAIL}` },
   { label: 'LeetCode', href: 'https://leetcode.com/u/Aashz/' },
   { label: 'CodeChef', href: 'https://www.codechef.com/users/aashz' },
   { label: 'Codeforces', href: 'https://codeforces.com/profile/Aashj' }
@@ -541,30 +543,67 @@ function App() {
         </section>
 
         <section className="contact section" id="contact">
-          <motion.div className="contact-card" variants={reveal} initial="hidden" whileInView="show" viewport={{ once: true }}>
-            <p>Let&apos;s collaborate</p>
-            <h2>Open to building cool things with serious execution.</h2>
-            <div className="contact-links">
-              {socialLinks.map((item) => (
-                <a
-                  key={item.label}
-                  href={item.href}
-                  className={cpLinkIconByLabel[item.label] ? 'contact-link-strong' : ''}
-                  {...getLinkProps(item.href)}
-                >
-                  {cpLinkIconByLabel[item.label] ? (
-                    <img
-                      src={cpLinkIconByLabel[item.label]}
-                      alt=""
-                      aria-hidden="true"
-                      className="contact-link-icon"
-                    />
-                  ) : null}
-                  {item.label}
-                </a>
-              ))}
-            </div>
-          </motion.div>
+          <div className="contact-stack">
+            <motion.div className="contact-card" variants={reveal} initial="hidden" whileInView="show" viewport={{ once: true }}>
+              <p className="contact-kicker">Let&apos;s collaborate</p>
+              <h2>Open to building cool things with serious execution.</h2>
+              <p className="contact-note">
+                Drop a message with your idea, timeline, or question. I usually reply within a day.
+              </p>
+              <div className="contact-links">
+                {socialLinks.map((item) => (
+                  <a
+                    key={item.label}
+                    href={item.href}
+                    className={cpLinkIconByLabel[item.label] ? 'contact-link-strong' : ''}
+                    {...getLinkProps(item.href)}
+                  >
+                    {cpLinkIconByLabel[item.label] ? (
+                      <img
+                        src={cpLinkIconByLabel[item.label]}
+                        alt=""
+                        aria-hidden="true"
+                        className="contact-link-icon"
+                      />
+                    ) : null}
+                    {item.label}
+                  </a>
+                ))}
+              </div>
+            </motion.div>
+
+            <motion.div
+              className="contact-form-card"
+              variants={reveal}
+              initial="hidden"
+              whileInView="show"
+              viewport={{ once: true }}
+              custom={0.1}
+            >
+              <form className="contact-form" action={CONTACT_FORM_ENDPOINT} method="POST">
+                <input type="hidden" name="_subject" value="New portfolio message" />
+                <label className="contact-field">
+                  <span>Name</span>
+                  <input type="text" name="name" placeholder="Your name" autoComplete="name" required />
+                </label>
+                <label className="contact-field">
+                  <span>Email</span>
+                  <input type="email" name="email" placeholder="you@example.com" autoComplete="email" required />
+                </label>
+                <label className="contact-field">
+                  <span>Subject</span>
+                  <input type="text" name="subject" placeholder="Project, question, or hello" />
+                </label>
+                <label className="contact-field">
+                  <span>Message</span>
+                  <textarea name="message" rows="5" placeholder="Enter your message here..." required />
+                </label>
+                <button className="btn btn-primary" type="submit">
+                  Send Message
+                </button>
+              </form>
+            </motion.div>
+          </div>
         </section>
 
         <footer className="site-footer">

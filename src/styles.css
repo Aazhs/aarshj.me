@@ -481,7 +481,8 @@ main {
 .skill-panel,
 .project-card,
 .timeline-card,
-.contact-card {
+.contact-card,
+.contact-form-card {
   border: 1px solid var(--line);
   border-radius: 0.95rem;
   background: linear-gradient(180deg, rgba(38, 35, 58, 0.94), rgba(31, 29, 46, 0.95));
@@ -664,14 +665,23 @@ main {
 }
 
 .contact-card {
-  text-align: center;
+  text-align: left;
   padding: clamp(1rem, 3vw, 1.45rem);
   background:
     radial-gradient(circle at 50% -40%, rgba(196, 167, 231, 0.22), transparent 52%),
     linear-gradient(180deg, rgba(38, 35, 58, 0.96), rgba(31, 29, 46, 0.98));
 }
 
-.contact-card p {
+.contact-stack {
+  display: grid;
+  gap: 1rem;
+}
+
+.contact-form-card {
+  padding: clamp(1rem, 3vw, 1.45rem);
+}
+
+.contact-kicker {
   margin: 0;
   color: var(--accent);
   font-size: 0.73rem;
@@ -681,16 +691,74 @@ main {
 }
 
 .contact-card h2 {
-  margin: 0.7rem auto 1.1rem;
+  margin: 0.7rem 0 1.1rem;
   max-width: 21ch;
   line-height: 1.2;
 }
 
+.contact-note {
+  margin: 0 0 1.2rem;
+  color: var(--muted);
+  line-height: 1.65;
+  max-width: 46ch;
+}
+
 .contact-links {
   display: flex;
-  justify-content: center;
+  justify-content: flex-start;
   flex-wrap: wrap;
   gap: 0.52rem;
+}
+
+.contact-form {
+  display: grid;
+  gap: 0.78rem;
+}
+
+.contact-field {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.contact-field span {
+  font-size: 0.65rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.contact-field input,
+.contact-field textarea {
+  border: 1px solid var(--line);
+  border-radius: 0.65rem;
+  padding: 0.7rem 0.78rem;
+  background: rgba(25, 23, 36, 0.55);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.85rem;
+  outline: none;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.contact-field textarea {
+  resize: vertical;
+  min-height: 120px;
+}
+
+.contact-field input:focus,
+.contact-field textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(196, 167, 231, 0.16);
+}
+
+.contact-form button {
+  width: fit-content;
+}
+
+.contact-footnote {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.72rem;
 }
 
 .contact-links a {
