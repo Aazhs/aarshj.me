@@ -198,16 +198,51 @@ function App() {
   useEffect(() => {
     let active = true;
     const storageKey = 'aarsh_unique_visit_recorded_v1';
+    const fallbackCountKey = 'aarsh_unique_visit_fallback_count_v1';
+    const fallbackFlagKey = 'aarsh_unique_visit_fallback_recorded_v1';
     const namespace = 'aazhs-portfolio';
     const key = 'unique-visits';
 
+    const readFlag = (keyName) => {
+      try {
+        return localStorage.getItem(keyName) === '1';
+      } catch {
+        return false;
+      }
+    };
+
+    const writeFlag = (keyName) => {
+      try {
+        localStorage.setItem(keyName, '1');
+      } catch {
+        // Ignore storage errors (private mode, blocked storage).
+      }
+    };
+
+    const bumpFallback = () => {
+      try {
+        const hasRecorded = readFlag(fallbackFlagKey);
+        const currentRaw = localStorage.getItem(fallbackCountKey) || '0';
+        const current = Number(currentRaw);
+        if (hasRecorded) {
+          return Number.isFinite(current) ? current : 0;
+        }
+        const next = Number.isFinite(current) ? current + 1 : 1;
+        localStorage.setItem(fallbackCountKey, String(next));
+        writeFlag(fallbackFlagKey);
+        return next;
+      } catch {
+        return null;
+      }
+    };
+
     const readVisits = async () => {
       try {
-        const hasRecordedVisit = localStorage.getItem(storageKey) === '1';
+        const hasRecordedVisit = readFlag(storageKey);
         const endpoint = hasRecordedVisit
           ? `https://api.countapi.xyz/get/${namespace}/${key}`
           : `https://api.countapi.xyz/hit/${namespace}/${key}`;
-        const response = await fetch(endpoint);
+        const response = await fetch(endpoint, { cache: 'no-store' });
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}`);
         }
@@ -216,13 +251,26 @@ function App() {
           return;
         }
         if (!hasRecordedVisit) {
-          localStorage.setItem(storageKey, '1');
+          writeFlag(storageKey);
         }
-        const count = Number.isFinite(data?.value) ? data.value : null;
-        setVisitCount(count !== null ? count.toLocaleString('en-US') : 'N/A');
+        const count = Number.isFinite(data?.value)
+          ? data.value
+          : Number.isFinite(data?.count)
+            ? data.count
+            : null;
+        if (count === null) {
+          throw new Error('Invalid count response');
+        }
+        setVisitCount(count.toLocaleString('en-US'));
       } catch {
-        if (active) {
-          setVisitCount('N/A');
+        const fallbackCount = bumpFallback();
+        if (!active) {
+          return;
+        }
+        if (Number.isFinite(fallbackCount)) {
+          setVisitCount(fallbackCount.toLocaleString('en-US'));
+        } else {
+          setVisitCount('0');
         }
       }
     };
