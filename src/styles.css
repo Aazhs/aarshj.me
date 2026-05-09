@@ -464,7 +464,7 @@ main {
 }
 
 .about-grid,
-.skill-panels,
+.tech-stack,
 .project-grid,
 .timeline {
   margin-top: 1.25rem;
@@ -478,7 +478,7 @@ main {
 
 .code-card,
 .bullet-card,
-.skill-panel,
+.tech-panel,
 .project-card,
 .timeline-card,
 .contact-card,
@@ -570,26 +570,130 @@ main {
   margin-top: 0.62rem;
 }
 
-.skill-panels {
+.tech-stack {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.8rem;
 }
 
-.skill-panel {
-  padding: 0.95rem;
+.tech-panel {
+  position: relative;
+  overflow: hidden;
+  padding: 1rem;
+  transition: border-color 180ms ease, transform 180ms ease;
 }
 
-.skill-panel h3 {
+.tech-panel:hover {
+  transform: translateY(-3px);
+  border-color: rgba(196, 167, 231, 0.78);
+}
+
+.tech-panel-head,
+.tech-grid {
+  position: relative;
+}
+
+.tech-panel-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.72rem;
+}
+
+.tech-index {
+  flex: 0 0 auto;
+  width: 2.15rem;
+  height: 2.15rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(156, 207, 216, 0.34);
+  border-radius: 0.62rem;
+  color: var(--foam);
+  background: rgba(156, 207, 216, 0.09);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.tech-panel h3 {
   margin: 0;
   color: var(--peach);
   font-size: 1rem;
 }
 
-.skill-panel p {
+.tech-panel p {
   margin: 0.5rem 0 0;
   color: var(--muted);
-  line-height: 1.65;
+  font-size: 0.82rem;
+  line-height: 1.55;
+}
+
+.tech-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.52rem;
+  margin-top: 1rem;
+}
+
+.tech-chip {
+  min-height: 2.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.48rem 0.58rem;
+  border: 1px solid rgba(144, 140, 170, 0.24);
+  border-radius: 0.65rem;
+  color: #dedaf1;
+  background: rgba(20, 18, 31, 0.42);
+  font-size: 0.78rem;
+  line-height: 1.2;
+}
+
+.tech-icon {
+  flex: 0 0 auto;
+  width: 1.52rem;
+  height: 1.52rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.45rem;
+  background: rgba(224, 222, 244, 0.08);
+}
+
+.tech-icon img {
+  width: 1rem;
+  height: 1rem;
+  object-fit: contain;
+  filter: drop-shadow(0 0 8px rgba(196, 167, 231, 0.18));
+}
+
+.tech-focus {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.58rem;
+  padding: 0.82rem 0.95rem;
+  border: 1px solid rgba(156, 207, 216, 0.28);
+  border-radius: 0.95rem;
+  background:
+    linear-gradient(90deg, rgba(156, 207, 216, 0.11), rgba(196, 167, 231, 0.08)),
+    rgba(31, 29, 46, 0.72);
+}
+
+.tech-focus span {
+  color: var(--foam);
+  font-size: 0.77rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.tech-focus strong {
+  padding: 0.38rem 0.56rem;
+  border-radius: 999px;
+  border: 1px solid rgba(235, 188, 186, 0.26);
+  color: var(--peach);
+  background: rgba(235, 188, 186, 0.08);
+  font-size: 0.78rem;
 }
 
 .project-grid {
@@ -877,7 +981,7 @@ main {
     align-content: center;
   }
 
-  .skill-panels,
+  .tech-stack,
   .timeline {
     grid-template-columns: 1fr;
   }
@@ -911,8 +1015,14 @@ main {
   }
 
   .project-grid,
-  .stats-grid {
+  .stats-grid,
+  .tech-grid {
     grid-template-columns: 1fr;
+  }
+
+  .tech-focus {
+    align-items: flex-start;
+    flex-direction: column;
   }
 
   .cp-row {

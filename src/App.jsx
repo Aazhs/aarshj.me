@@ -3,6 +3,11 @@ import { motion } from 'framer-motion';
 
 const CONTACT_EMAIL = 'aarshjozhi@gmail.com';
 const CONTACT_FORM_ENDPOINT = 'https://formspree.io/f/xjglvljd';
+const VISIT_COUNTER_BASE_URL = 'https://api.counterapi.dev/v1/aazhs-portfolio/unique-visits';
+const VISIT_COUNTER_PROXY_BASE_URL = 'https://api.codetabs.com/v1/proxy/?quest=';
+const VISIT_COUNTER_STORAGE_KEY = 'aarsh_counterapi_unique_visit_recorded_v1';
+const VISIT_COUNTER_CACHE_KEY = 'aarsh_unique_visit_count_cache_v1';
+const VISIT_COUNTER_TIMEOUT_MS = 6500;
 
 const socialLinks = [
   { label: 'GitHub', href: 'https://github.com/Aazhs' },
@@ -31,6 +36,43 @@ const cpLinks = [
     label: 'LeetCode',
     href: 'https://leetcode.com/u/Aashz/',
     icon: 'https://cdn.simpleicons.org/leetcode/FFA116'
+  }
+];
+
+const techStackGroups = [
+  {
+    title: 'Languages',
+    note: 'Core syntax, DSA, scripting, and product code.',
+    items: [
+      { name: 'C++', icon: 'https://cdn.simpleicons.org/cplusplus/9CCFD8' },
+      { name: 'C', icon: 'https://cdn.simpleicons.org/c/A6A8C4' },
+      { name: 'Python', icon: 'https://cdn.simpleicons.org/python/F6C177' },
+      { name: 'JavaScript', icon: 'https://cdn.simpleicons.org/javascript/F6C177' },
+      { name: 'TypeScript', icon: 'https://cdn.simpleicons.org/typescript/9CCFD8' },
+      { name: 'Bash', icon: 'https://cdn.simpleicons.org/gnubash/EBBCBA' }
+    ]
+  },
+  {
+    title: 'Frontend',
+    note: 'Interfaces, responsive systems, and polished web apps.',
+    items: [
+      { name: 'React', icon: 'https://cdn.simpleicons.org/react/9CCFD8' },
+      { name: 'Vite', icon: 'https://cdn.simpleicons.org/vite/C4A7E7' },
+      { name: 'HTML5', icon: 'https://cdn.simpleicons.org/html5/EBBCBA' },
+      { name: 'CSS3', icon: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/css3/css3-original.svg' },
+      { name: 'Framer Motion', icon: 'https://cdn.simpleicons.org/framer/FFFFFF' }
+    ]
+  },
+  {
+    title: 'Tools',
+    note: 'Daily workflow, automation, source control, and deploys.',
+    items: [
+      { name: 'Linux', icon: 'https://cdn.simpleicons.org/linux/E0DEF4' },
+      { name: 'Git', icon: 'https://cdn.simpleicons.org/git/EBBCBA' },
+      { name: 'GitHub', icon: 'https://cdn.simpleicons.org/github/FFFFFF' },
+      { name: 'VS Code', icon: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/vscode/vscode-original.svg' },
+      { name: 'GitHub Actions', icon: 'https://cdn.simpleicons.org/githubactions/C4A7E7' }
+    ]
   }
 ];
 
@@ -135,6 +177,37 @@ function projectScore(repo) {
   return stars + forks + size + recency + hasDescription + hasHomepage + lowSignalPenalty;
 }
 
+function getCounterValue(data) {
+  const count = Number(data?.count ?? data?.value ?? data?.data);
+  return Number.isFinite(count) ? count : null;
+}
+
+async function fetchJsonWithTimeout(url, ms = VISIT_COUNTER_TIMEOUT_MS) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), ms);
+  try {
+    const response = await fetch(url, {
+      cache: 'no-store',
+      signal: controller.signal
+    });
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+    return await response.json();
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function fetchCounterData(endpoint) {
+  try {
+    return await fetchJsonWithTimeout(endpoint);
+  } catch {
+    const proxyEndpoint = `${VISIT_COUNTER_PROXY_BASE_URL}${encodeURIComponent(endpoint)}`;
+    return fetchJsonWithTimeout(proxyEndpoint);
+  }
+}
+
 const reveal = {
   hidden: { opacity: 0, y: 12 },
   show: (delay = 0) => ({
@@ -183,11 +256,6 @@ function App() {
 
   useEffect(() => {
     let active = true;
-    const storageKey = 'aarsh_unique_visit_recorded_v1';
-    const fallbackCountKey = 'aarsh_unique_visit_fallback_count_v1';
-    const fallbackFlagKey = 'aarsh_unique_visit_fallback_recorded_v1';
-    const namespace = 'aazhs-portfolio';
-    const key = 'unique-visits';
 
     const readFlag = (keyName) => {
       try {
@@ -205,58 +273,51 @@ function App() {
       }
     };
 
-    const bumpFallback = () => {
+    const readCachedCount = () => {
       try {
-        const hasRecorded = readFlag(fallbackFlagKey);
-        const currentRaw = localStorage.getItem(fallbackCountKey) || '0';
-        const current = Number(currentRaw);
-        if (hasRecorded) {
-          return Number.isFinite(current) ? current : 0;
-        }
-        const next = Number.isFinite(current) ? current + 1 : 1;
-        localStorage.setItem(fallbackCountKey, String(next));
-        writeFlag(fallbackFlagKey);
-        return next;
+        const cached = Number(localStorage.getItem(VISIT_COUNTER_CACHE_KEY));
+        return Number.isFinite(cached) && cached > 0 ? cached : null;
       } catch {
         return null;
       }
     };
 
+    const writeCachedCount = (count) => {
+      try {
+        localStorage.setItem(VISIT_COUNTER_CACHE_KEY, String(count));
+      } catch {
+        // Ignore storage errors (private mode, blocked storage).
+      }
+    };
+
     const readVisits = async () => {
       try {
-        const hasRecordedVisit = readFlag(storageKey);
+        const hasRecordedVisit = readFlag(VISIT_COUNTER_STORAGE_KEY);
         const endpoint = hasRecordedVisit
-          ? `https://api.countapi.xyz/get/${namespace}/${key}`
-          : `https://api.countapi.xyz/hit/${namespace}/${key}`;
-        const response = await fetch(endpoint, { cache: 'no-store' });
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}`);
-        }
-        const data = await response.json();
+          ? `${VISIT_COUNTER_BASE_URL}/`
+          : `${VISIT_COUNTER_BASE_URL}/up`;
+        const data = await fetchCounterData(endpoint);
         if (!active) {
           return;
         }
         if (!hasRecordedVisit) {
-          writeFlag(storageKey);
+          writeFlag(VISIT_COUNTER_STORAGE_KEY);
         }
-        const count = Number.isFinite(data?.value)
-          ? data.value
-          : Number.isFinite(data?.count)
-            ? data.count
-            : null;
+        const count = getCounterValue(data);
         if (count === null) {
           throw new Error('Invalid count response');
         }
+        writeCachedCount(count);
         setVisitCount(count.toLocaleString('en-US'));
       } catch {
-        const fallbackCount = bumpFallback();
+        const cachedCount = readCachedCount();
         if (!active) {
           return;
         }
-        if (Number.isFinite(fallbackCount)) {
-          setVisitCount(fallbackCount.toLocaleString('en-US'));
+        if (cachedCount !== null) {
+          setVisitCount(cachedCount.toLocaleString('en-US'));
         } else {
-          setVisitCount('0');
+          setVisitCount('Unavailable');
         }
       }
     };
@@ -570,18 +631,42 @@ function App() {
             <h2>Technologies I use to ship and learn fast.</h2>
           </motion.div>
 
-          <div className="skill-panels">
-            <motion.div className="skill-panel" variants={reveal} initial="hidden" whileInView="show" viewport={{ once: true }}>
-              <h3>Languages</h3>
-              <p>C++ • C • Python • JavaScript • TypeScript • Bash</p>
-            </motion.div>
-            <motion.div className="skill-panel" variants={reveal} initial="hidden" whileInView="show" custom={0.1} viewport={{ once: true }}>
-              <h3>Web</h3>
-              <p>React • HTML • CSS • Component architecture • Responsive systems</p>
-            </motion.div>
-            <motion.div className="skill-panel" variants={reveal} initial="hidden" whileInView="show" custom={0.2} viewport={{ once: true }}>
-              <h3>Tools</h3>
-              <p>Linux • Git • VS Code • GitHub Actions • Shell automation • CLI workflows</p>
+          <div className="tech-stack">
+            {techStackGroups.map((group, index) => (
+              <motion.article
+                className="tech-panel"
+                key={group.title}
+                variants={reveal}
+                initial="hidden"
+                whileInView="show"
+                custom={index * 0.1}
+                viewport={{ once: true }}
+              >
+                <div className="tech-panel-head">
+                  <span className="tech-index">0{index + 1}</span>
+                  <div>
+                    <h3>{group.title}</h3>
+                    <p>{group.note}</p>
+                  </div>
+                </div>
+                <div className="tech-grid">
+                  {group.items.map((tech) => (
+                    <span className="tech-chip" key={tech.name}>
+                      <span className="tech-icon">
+                        <img src={tech.icon} alt="" loading="lazy" />
+                      </span>
+                      <span>{tech.name}</span>
+                    </span>
+                  ))}
+                </div>
+              </motion.article>
+            ))}
+            <motion.div className="tech-focus" variants={reveal} initial="hidden" whileInView="show" custom={0.3} viewport={{ once: true }}>
+              <span>Currently sharpening</span>
+              <strong>Go</strong>
+              <strong>Node.js</strong>
+              <strong>Backend APIs</strong>
+              <strong>System design basics</strong>
             </motion.div>
           </div>
         </section>
