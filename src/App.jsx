@@ -80,8 +80,8 @@ const fallbackProjects = [
   {
     name: 'aarshj.me',
     title: 'aarshj.me',
-    description: 'Personal domain site and portfolio landing experience.',
-    stack: ['HTML', 'CSS', 'JavaScript'],
+    description: 'Modern personal portfolio featuring an animated pixel-inspired hero, live GitHub highlights, and competitive programming stats. Built with a focus on polished animations and responsive UI.',
+    stack: ['React', 'Vite', 'Framer Motion'],
     stars: 1,
     forks: 0,
     language: 'HTML',
@@ -91,8 +91,8 @@ const fallbackProjects = [
   {
     name: 'SpotiMirror',
     title: 'SpotiMirror',
-    description: 'Global Spotify map to visualize music trends around the world.',
-    stack: ['JavaScript', 'Maps', 'Data Viz'],
+    description: 'Privacy-centric global map for real-time Spotify activity visualization. Uses location fuzzing and pseudonyms to allow anonymous music discovery via an interactive Leaflet interface.',
+    stack: ['React', 'Flask', 'Leaflet'],
     stars: 1,
     forks: 0,
     language: 'JavaScript',
@@ -102,8 +102,8 @@ const fallbackProjects = [
   {
     name: 'datathon-2026',
     title: 'Datathon 2026',
-    description: 'Data analysis and visualization project for the 2026 Datathon challenge.',
-    stack: ['Python', 'Data Science', 'Analysis'],
+    description: 'Cyberpunk-themed registration platform for data competitions, featuring an embedded HTML5 Canvas space shooter. Integrates FastAPI and Supabase for high-performance team registration.',
+    stack: ['FastAPI', 'Supabase', 'Canvas'],
     stars: 0,
     forks: 0,
     language: 'Python',
@@ -113,8 +113,8 @@ const fallbackProjects = [
   {
     name: 'ToS-Analyser',
     title: 'ToS-Analyser',
-    description: 'AI-powered prototype with Chrome Extension, FastAPI, and React. Detects legal risk language, summarizes policies using ToS;DR and Gemini, and blocks auth actions until acknowledgment.',
-    stack: ['FastAPI', 'React', 'Gemini'],
+    description: 'AI-powered full-stack prototype that analyzes Terms of Service in real-time. Features a Chrome extension and FastAPI backend using Gemini AI and ToS;DR for automated risk summaries.',
+    stack: ['FastAPI', 'Chrome Ext', 'Gemini'],
     stars: 0,
     forks: 0,
     language: 'JavaScript',
@@ -124,8 +124,8 @@ const fallbackProjects = [
   {
     name: 'LockInApp',
     title: 'LockInApp',
-    description: 'Productivity-focused app for structured focus sessions and task flow.',
-    stack: ['TypeScript', 'Productivity', 'Web'],
+    description: 'Local-first productivity tool tracking website usage and digital habits. Provides real-time dashboards, focus-quality scoring, and daily AI-generated accountability reports via email.',
+    stack: ['Python', 'AI', 'Productivity'],
     stars: 0,
     forks: 0,
     language: 'TypeScript',
@@ -135,7 +135,7 @@ const fallbackProjects = [
   {
     name: 'mindtone-api',
     title: 'MindTone API 🧠',
-    description: 'Mental health sentiment analysis tool using local BERT and Gemini to classify user statements across 3-class sentiment and mental-health labels.',
+    description: 'Mental health sentiment analysis tool using local BERT for 3-class sentiment and Gemini for broader mental-health labels like anxiety and stress. Designed for classification and trend analysis.',
     stack: ['FastAPI', 'BERT', 'Gemini'],
     stars: 0,
     forks: 0,
