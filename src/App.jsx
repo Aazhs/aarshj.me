@@ -78,6 +78,17 @@ const techStackGroups = [
 
 const fallbackProjects = [
   {
+    name: 'aarshj.me',
+    title: 'aarshj.me',
+    description: 'Personal domain site and portfolio landing experience.',
+    stack: ['HTML', 'CSS', 'JavaScript'],
+    stars: 1,
+    forks: 0,
+    language: 'HTML',
+    href: 'https://github.com/Aazhs/aarshj.me',
+    updated: '2026-03-06T17:39:00Z'
+  },
+  {
     name: 'SpotiMirror',
     title: 'SpotiMirror',
     description: 'Global Spotify map to visualize music trends around the world.',
@@ -87,6 +98,28 @@ const fallbackProjects = [
     language: 'JavaScript',
     href: 'https://github.com/Aazhs/SpotiMirror',
     updated: '2026-03-05T12:47:35Z'
+  },
+  {
+    name: 'datathon-2026',
+    title: 'Datathon 2026',
+    description: 'Data analysis and visualization project for the 2026 Datathon challenge.',
+    stack: ['Python', 'Data Science', 'Analysis'],
+    stars: 0,
+    forks: 0,
+    language: 'Python',
+    href: 'https://github.com/Aazhs/datathon-2026',
+    updated: '2026-05-15T10:00:00Z'
+  },
+  {
+    name: 'ToS-Analyser',
+    title: 'ToS-Analyser',
+    description: 'AI-powered prototype with Chrome Extension, FastAPI, and React. Detects legal risk language, summarizes policies using ToS;DR and Gemini, and blocks auth actions until acknowledgment.',
+    stack: ['FastAPI', 'React', 'Gemini'],
+    stars: 0,
+    forks: 0,
+    language: 'JavaScript',
+    href: 'https://github.com/Aazhs/ToS-Analyser',
+    updated: '2026-04-17T05:59:39Z'
   },
   {
     name: 'LockInApp',
@@ -100,48 +133,15 @@ const fallbackProjects = [
     updated: '2026-04-02T12:16:02Z'
   },
   {
-    name: 'ToS-Analyser',
-    title: 'ToS-Analyser',
-    description: 'Tooling around Terms-of-Service analysis with practical web UX.',
-    stack: ['JavaScript', 'Analysis', 'UX'],
+    name: 'mindtone-api',
+    title: 'MindTone API 🧠',
+    description: 'Mental health sentiment analysis tool using local BERT and Gemini to classify user statements across 3-class sentiment and mental-health labels.',
+    stack: ['FastAPI', 'BERT', 'Gemini'],
     stars: 0,
     forks: 0,
-    language: 'JavaScript',
-    href: 'https://github.com/Aazhs/ToS-Analyser',
-    updated: '2026-04-17T05:59:39Z'
-  },
-  {
-    name: 'password_policy_enforcer',
-    title: 'Password Policy Enforcer',
-    description: 'Shell-based system policy tool for stronger password security.',
-    stack: ['Shell', 'Linux', 'Security'],
-    stars: 0,
-    forks: 0,
-    language: 'Shell',
-    href: 'https://github.com/Aazhs/password_policy_enforcer',
-    updated: '2025-12-29T18:11:13Z'
-  },
-  {
-    name: 'aarshj.me',
-    title: 'aarshj.me',
-    description: 'Personal domain site and portfolio landing experience.',
-    stack: ['HTML', 'CSS', 'JavaScript'],
-    stars: 1,
-    forks: 0,
-    language: 'HTML',
-    href: 'https://github.com/Aazhs/aarshj.me',
-    updated: '2026-03-06T17:39:00Z'
-  },
-  {
-    name: 'technodium-2026',
-    title: 'technodium-2026',
-    description: 'Hackathon build exploring TypeScript-driven product ideas.',
-    stack: ['TypeScript', 'Hackathon', 'Frontend'],
-    stars: 0,
-    forks: 0,
-    language: 'TypeScript',
-    href: 'https://github.com/Aazhs/technodium-2026',
-    updated: '2026-03-19T10:23:14Z'
+    language: 'Python',
+    href: 'https://github.com/Aazhs/sentiment-analysis-aarsh',
+    updated: '2026-05-18T12:00:00Z'
   }
 ];
 
@@ -152,29 +152,12 @@ const cpLinkIconByLabel = Object.fromEntries(cpLinks.map((item) => [item.label, 
 const CODECHEF_RATING = '1178';
 const CODECHEF_META = 'Current rating';
 
-const hiddenRepoNames = new Set(['aazhs', 'skills-introduction-to-github', 'random', 'mincraft']);
-
 function formatUpdatedDate(isoDate) {
   if (!isoDate) {
     return 'Updated recently';
   }
   const date = new Date(isoDate);
   return `Updated ${date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}`;
-}
-
-function projectScore(repo) {
-  const now = Date.now();
-  const pushedAt = new Date(repo.pushed_at).getTime();
-  const monthMs = 1000 * 60 * 60 * 24 * 30;
-  const monthsOld = Number.isFinite(pushedAt) ? (now - pushedAt) / monthMs : 36;
-  const recency = Math.max(0, 36 - monthsOld);
-  const stars = (repo.stargazers_count ?? 0) * 14;
-  const forks = (repo.forks_count ?? 0) * 10;
-  const size = Math.min(repo.size ?? 0, 30000) / 1200;
-  const hasDescription = repo.description && repo.description.trim().length > 8 ? 4 : -2;
-  const hasHomepage = repo.homepage ? 2 : 0;
-  const lowSignalPenalty = /(badapp|test|practice|demo|random)/i.test(repo.name) ? -14 : 0;
-  return stars + forks + size + recency + hasDescription + hasHomepage + lowSignalPenalty;
 }
 
 function getCounterValue(data) {
@@ -403,39 +386,37 @@ function App() {
   }, []);
 
   const featuredProjects = useMemo(() => {
-    if (!repos.length) {
-      return fallbackProjects;
+    const repoMap = new Map();
+    if (repos.length) {
+      repos.forEach((repo) => {
+        repoMap.set(repo.name.toLowerCase(), repo);
+      });
     }
 
-    const ranked = repos
-      .filter((repo) => !repo.fork && !repo.archived && !hiddenRepoNames.has(repo.name.toLowerCase()))
-      .map((repo) => {
-        const topicTags = Array.isArray(repo.topics) ? repo.topics.slice(0, 2) : [];
-        const derivedTags = [...topicTags];
-        if (repo.language) {
-          derivedTags.push(repo.language);
-        }
-        if (derivedTags.length === 0) {
-          derivedTags.push('Project');
-        }
+    return fallbackProjects.map((fallback) => {
+      const liveRepo = repoMap.get(fallback.name.toLowerCase());
+      if (!liveRepo) {
+        return fallback;
+      }
 
-        return {
-          name: repo.name,
-          title: repo.name,
-          description: repo.description || 'Repository with active development and practical implementation.',
-          stars: repo.stargazers_count ?? 0,
-          forks: repo.forks_count ?? 0,
-          language: repo.language,
-          href: repo.html_url,
-          updated: repo.pushed_at,
-          stack: derivedTags,
-          _score: projectScore(repo)
-        };
-      })
-      .sort((a, b) => b._score - a._score)
-      .slice(0, 6);
+      const topicTags = Array.isArray(liveRepo.topics) ? liveRepo.topics.slice(0, 2) : [];
+      const derivedTags = [...topicTags];
+      if (liveRepo.language) {
+        derivedTags.push(liveRepo.language);
+      }
+      if (derivedTags.length === 0) {
+        derivedTags.push('Project');
+      }
 
-    return ranked.length ? ranked : fallbackProjects;
+      return {
+        ...fallback,
+        stars: liveRepo.stargazers_count ?? fallback.stars,
+        forks: liveRepo.forks_count ?? fallback.forks,
+        updated: liveRepo.pushed_at ?? fallback.updated,
+        stack: derivedTags.length > 0 ? derivedTags : fallback.stack,
+        href: liveRepo.html_url ?? fallback.href
+      };
+    }).slice(0, 6);
   }, [repos]);
 
   const quickStats = [
@@ -773,14 +754,29 @@ function App() {
             >
               <form className="contact-form" action={CONTACT_FORM_ENDPOINT} method="POST">
                 <input type="hidden" name="_subject" value="New portfolio message" />
-                <label className="contact-field">
-                  <span>Name</span>
-                  <input type="text" name="name" placeholder="Your name" autoComplete="name" required />
-                </label>
-                <label className="contact-field">
-                  <span>Email</span>
-                  <input type="email" name="email" placeholder="you@example.com" autoComplete="email" required />
-                </label>
+                <div className="contact-row">
+                  <label className="contact-field">
+                    <span>Name</span>
+                    <input
+                      type="text"
+                      name="name"
+                      placeholder="Your name"
+                      autoComplete="name"
+                      required
+                      pattern="^[A-Za-z\s]+$"
+                      title="Please enter only letters and spaces."
+                      onKeyDown={(e) => {
+                        if (!/^[a-zA-Z\s]$/.test(e.key) && e.key.length === 1) {
+                          e.preventDefault();
+                        }
+                      }}
+                    />
+                  </label>
+                  <label className="contact-field">
+                    <span>Email</span>
+                    <input type="email" name="email" placeholder="you@example.com" autoComplete="email" required />
+                  </label>
+                </div>
                 <label className="contact-field">
                   <span>Subject</span>
                   <input type="text" name="subject" placeholder="Project, question, or hello" />
@@ -789,9 +785,14 @@ function App() {
                   <span>Message</span>
                   <textarea name="message" rows="5" placeholder="Enter your message here..." required />
                 </label>
-                <button className="btn btn-primary" type="submit">
-                  Send Message
-                </button>
+                <div className="contact-actions">
+                  <button className="btn btn-primary" type="submit">
+                    Send Message
+                  </button>
+                  <button className="btn btn-ghost" type="reset">
+                    Clear All
+                  </button>
+                </div>
               </form>
             </motion.div>
           </div>
