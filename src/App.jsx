@@ -79,9 +79,9 @@ const techStackGroups = [
 const fallbackProjects = [
   {
     name: 'aarshj.me',
-    title: 'aarshj.me',
+    title: 'aarshj.me 🌐',
     description: 'Modern personal portfolio featuring an animated pixel-inspired hero, live GitHub highlights, and competitive programming stats. Built with a focus on polished animations and responsive UI.',
-    stack: ['React', 'Vite', 'Framer Motion'],
+    stack: ['React JS', 'Vite', 'Framer Motion'],
     stars: 1,
     forks: 0,
     language: 'HTML',
@@ -90,9 +90,9 @@ const fallbackProjects = [
   },
   {
     name: 'SpotiMirror',
-    title: 'SpotiMirror',
+    title: 'SpotiMirror 🎵',
     description: 'Privacy-centric global map for real-time Spotify activity visualization. Uses location fuzzing and pseudonyms to allow anonymous music discovery via an interactive Leaflet interface.',
-    stack: ['React', 'Flask', 'Leaflet'],
+    stack: ['Python', 'Flask', 'React', 'Leaflet'],
     stars: 1,
     forks: 0,
     language: 'JavaScript',
@@ -101,9 +101,9 @@ const fallbackProjects = [
   },
   {
     name: 'datathon-2026',
-    title: 'Datathon 2026',
+    title: 'Datathon 2026 🚀',
     description: 'Cyberpunk-themed registration platform for data competitions, featuring an embedded HTML5 Canvas space shooter. Integrates FastAPI and Supabase for high-performance team registration.',
-    stack: ['FastAPI', 'Supabase', 'Canvas'],
+    stack: ['FastAPI', 'Python', 'Supabase', 'Canvas'],
     stars: 0,
     forks: 0,
     language: 'Python',
@@ -112,9 +112,9 @@ const fallbackProjects = [
   },
   {
     name: 'ToS-Analyser',
-    title: 'ToS-Analyser',
+    title: 'ToS-Analyser ⚖️',
     description: 'AI-powered full-stack prototype that analyzes Terms of Service in real-time. Features a Chrome extension and FastAPI backend using Gemini AI and ToS;DR for automated risk summaries.',
-    stack: ['FastAPI', 'Chrome Ext', 'Gemini'],
+    stack: ['Python', 'FastAPI', 'React', 'Chrome Ext'],
     stars: 0,
     forks: 0,
     language: 'JavaScript',
@@ -123,9 +123,9 @@ const fallbackProjects = [
   },
   {
     name: 'LockInApp',
-    title: 'LockInApp',
+    title: 'LockInApp 🔒',
     description: 'Local-first productivity tool tracking website usage and digital habits. Provides real-time dashboards, focus-quality scoring, and daily AI-generated accountability reports via email.',
-    stack: ['Python', 'AI', 'Productivity'],
+    stack: ['Python', 'FastAPI', 'AI', 'Productivity'],
     stars: 0,
     forks: 0,
     language: 'TypeScript',
@@ -136,7 +136,7 @@ const fallbackProjects = [
     name: 'mindtone-api',
     title: 'MindTone API 🧠',
     description: 'Mental health sentiment analysis tool using local BERT for 3-class sentiment and Gemini for broader mental-health labels like anxiety and stress. Designed for classification and trend analysis.',
-    stack: ['FastAPI', 'BERT', 'Gemini'],
+    stack: ['Python', 'FastAPI', 'BERT', 'Gemini'],
     stars: 0,
     forks: 0,
     language: 'Python',
@@ -151,14 +151,6 @@ const getLinkProps = (href) =>
 const cpLinkIconByLabel = Object.fromEntries(cpLinks.map((item) => [item.label, item.icon]));
 const CODECHEF_RATING = '1178';
 const CODECHEF_META = 'Current rating';
-
-function formatUpdatedDate(isoDate) {
-  if (!isoDate) {
-    return 'Updated recently';
-  }
-  const date = new Date(isoDate);
-  return `Updated ${date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}`;
-}
 
 function getCounterValue(data) {
   const count = Number(data?.count ?? data?.value ?? data?.data);
@@ -399,21 +391,12 @@ function App() {
         return fallback;
       }
 
-      const topicTags = Array.isArray(liveRepo.topics) ? liveRepo.topics.slice(0, 2) : [];
-      const derivedTags = [...topicTags];
-      if (liveRepo.language) {
-        derivedTags.push(liveRepo.language);
-      }
-      if (derivedTags.length === 0) {
-        derivedTags.push('Project');
-      }
-
       return {
         ...fallback,
         stars: liveRepo.stargazers_count ?? fallback.stars,
         forks: liveRepo.forks_count ?? fallback.forks,
         updated: liveRepo.pushed_at ?? fallback.updated,
-        stack: derivedTags.length > 0 ? derivedTags : fallback.stack,
+        stack: fallback.stack,
         href: liveRepo.html_url ?? fallback.href
       };
     }).slice(0, 6);
@@ -680,11 +663,9 @@ function App() {
                     <span key={tag}>{tag}</span>
                   ))}
                 </div>
-                <small>{formatUpdatedDate(project.updated)}</small>
                 <a href={project.href} target="_blank" rel="noreferrer">
                   Open Repository
-                </a>
-              </motion.article>
+                </a>              </motion.article>
             ))}
           </div>
         </section>
