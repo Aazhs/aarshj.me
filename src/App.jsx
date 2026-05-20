@@ -102,8 +102,8 @@ const fallbackProjects = [
   {
     name: 'datathon-2026',
     title: 'Datathon 2026 🚀',
-    description: 'Cyberpunk-themed registration platform for data competitions, featuring an embedded HTML5 Canvas space shooter. Integrates FastAPI and Supabase for high-performance team registration.',
-    stack: ['FastAPI', 'Python', 'Supabase', 'Canvas'],
+    description: 'Registration platform for a Hackathon organised in MITAOE, featuring an embedded Canvas space shooter game. Integrates FastAPI and Supabase for high-performance team registration.Handled 500+ registrations on website',
+    stack: ['FastAPI', 'Python', 'Supabase'],
     stars: 0,
     forks: 0,
     language: 'Python',
