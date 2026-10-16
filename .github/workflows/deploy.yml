@@ -4,6 +4,9 @@ on:
   push:
     branches: ["main"]
   workflow_dispatch:
+  # Rebuild every 6 hours so CP ratings in stats.json stay current.
+  schedule:
+    - cron: "17 */6 * * *"
 
 permissions:
   contents: read

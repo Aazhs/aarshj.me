@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
+import PixelScene, { SpriteIcon } from './PixelScene';
+import { moodForGenre } from './music';
 
 const CONTACT_EMAIL = 'aarshjozhi@gmail.com';
 const CONTACT_FORM_ENDPOINT = 'https://formspree.io/f/xjglvljd';
@@ -8,6 +10,9 @@ const VISIT_COUNTER_PROXY_BASE_URL = 'https://api.codetabs.com/v1/proxy/?quest='
 const VISIT_COUNTER_STORAGE_KEY = 'aarsh_counterapi_unique_visit_recorded_v1';
 const VISIT_COUNTER_CACHE_KEY = 'aarsh_unique_visit_count_cache_v1';
 const VISIT_COUNTER_TIMEOUT_MS = 6500;
+// Now playing: Apple Music scrobbles to Last.fm via a scrobbler app. Leave empty to hide the widget.
+const LASTFM_USER = 'aashzz';
+const LASTFM_API_KEY = 'f764f91387023846a564a9170a02ae8c';
 
 const socialLinks = [
   { label: 'GitHub', href: 'https://github.com/Aazhs' },
@@ -23,19 +28,19 @@ const cpLinks = [
     key: 'codechef',
     label: 'CodeChef',
     href: 'https://www.codechef.com/users/aashz',
-    icon: 'https://cdn.simpleicons.org/codechef/FFFFFF'
+    icon: '/icons/codechef.svg'
   },
   {
     key: 'codeforces',
     label: 'Codeforces',
     href: 'https://codeforces.com/profile/Aashj',
-    icon: 'https://cdn.simpleicons.org/codeforces/1F8ACB'
+    icon: '/icons/codeforces.svg'
   },
   {
     key: 'leetcode',
     label: 'LeetCode',
     href: 'https://leetcode.com/u/Aashz/',
-    icon: 'https://cdn.simpleicons.org/leetcode/FFA116'
+    icon: '/icons/leetcode.svg'
   }
 ];
 
@@ -44,104 +49,143 @@ const techStackGroups = [
     title: 'Languages',
     note: 'Core syntax, DSA, scripting, and product code.',
     items: [
-      { name: 'C++', icon: 'https://cdn.simpleicons.org/cplusplus/9CCFD8' },
-      { name: 'C', icon: 'https://cdn.simpleicons.org/c/A6A8C4' },
-      { name: 'Python', icon: 'https://cdn.simpleicons.org/python/F6C177' },
-      { name: 'JavaScript', icon: 'https://cdn.simpleicons.org/javascript/F6C177' },
-      { name: 'TypeScript', icon: 'https://cdn.simpleicons.org/typescript/9CCFD8' },
-      { name: 'Bash', icon: 'https://cdn.simpleicons.org/gnubash/EBBCBA' }
+      { name: 'C++', icon: '/icons/cplusplus.svg' },
+      { name: 'C', icon: '/icons/c.svg' },
+      { name: 'Python', icon: '/icons/python.svg' },
+      { name: 'JavaScript', icon: '/icons/javascript.svg' },
+      { name: 'TypeScript', icon: '/icons/typescript.svg' },
+      { name: 'SQL', icon: '/icons/mysql.svg' },
+      { name: 'SQLite', icon: '/icons/sqlite.svg' },
+      { name: 'Bash', icon: '/icons/gnubash.svg' }
     ]
   },
   {
     title: 'Frontend',
     note: 'Interfaces, responsive systems, and polished web apps.',
     items: [
-      { name: 'React', icon: 'https://cdn.simpleicons.org/react/9CCFD8' },
-      { name: 'Vite', icon: 'https://cdn.simpleicons.org/vite/C4A7E7' },
-      { name: 'HTML5', icon: 'https://cdn.simpleicons.org/html5/EBBCBA' },
-      { name: 'CSS3', icon: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/css3/css3-original.svg' },
-      { name: 'Framer Motion', icon: 'https://cdn.simpleicons.org/framer/FFFFFF' }
+      { name: 'React', icon: '/icons/react.svg' },
+      { name: 'Vite', icon: '/icons/vite.svg' },
+      { name: 'HTML5', icon: '/icons/html5.svg' },
+      { name: 'CSS3', icon: '/icons/css3.svg' },
+      { name: 'Framer Motion', icon: '/icons/framer.svg' }
+    ]
+  },
+  {
+    title: 'AI / ML',
+    note: 'Training, exporting, and running models on-device.',
+    items: [
+      { name: 'PyTorch', icon: '/icons/pytorch.svg' },
+      { name: 'ONNX Runtime', icon: '/icons/onnx.svg' },
+      { name: 'OpenCV', icon: '/icons/opencv.svg' },
+      { name: 'NumPy', icon: '/icons/numpy.svg' },
+      { name: 'Hugging Face', icon: '/icons/huggingface.svg' },
+      { name: 'Gemini', icon: '/icons/googlegemini.svg' }
     ]
   },
   {
     title: 'Tools',
     note: 'Daily workflow, automation, source control, and deploys.',
     items: [
-      { name: 'Linux', icon: 'https://cdn.simpleicons.org/linux/E0DEF4' },
-      { name: 'Git', icon: 'https://cdn.simpleicons.org/git/EBBCBA' },
-      { name: 'GitHub', icon: 'https://cdn.simpleicons.org/github/FFFFFF' },
-      { name: 'VS Code', icon: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/vscode/vscode-original.svg' },
-      { name: 'GitHub Actions', icon: 'https://cdn.simpleicons.org/githubactions/C4A7E7' }
+      { name: 'Linux', icon: '/icons/linux.svg' },
+      { name: 'Git', icon: '/icons/git.svg' },
+      { name: 'GitHub', icon: '/icons/github.svg' },
+      { name: 'VS Code', icon: '/icons/vscode.svg' },
+      { name: 'GitHub Actions', icon: '/icons/githubactions.svg' }
     ]
   }
 ];
 
+// `href` is the public repo (omitted for private ones); `live` is a deployed site.
 const fallbackProjects = [
   {
-    name: 'aarshj.me',
-    title: 'aarshj.me 🌐',
-    description: 'Modern personal portfolio featuring an animated pixel-inspired hero, live GitHub highlights, and competitive programming stats. Built with a focus on polished animations and responsive UI.',
-    stack: ['React JS', 'Vite', 'Framer Motion'],
-    stars: 1,
+    name: 'labsync',
+    title: 'LabSync 🧪',
+    description: 'Browser IDE for college programming labs that sorts every student\u2019s errors into syntax, logic, or conceptual in real time, gives hints instead of answers, and hands the professor a prioritised help queue.',
+    stack: ['Next.js', 'TypeScript', 'Socket.IO', 'Supabase'],
+    role: 'Solo',
+    stars: 0,
     forks: 0,
-    language: 'HTML',
-    href: 'https://github.com/Aazhs/aarshj.me',
-    updated: '2026-03-06T17:39:00Z'
+    href: 'https://github.com/Aazhs/labsync',
+    live: 'https://labsync-six.vercel.app'
   },
   {
-    name: 'SpotiMirror',
-    title: 'SpotiMirror 🎵',
-    description: 'Privacy-centric global map for real-time Spotify activity visualization. Uses location fuzzing and pseudonyms to allow anonymous music discovery via an interactive Leaflet interface.',
-    stack: ['Python', 'Flask', 'React', 'Leaflet'],
-    stars: 1,
+    name: 'Medi-Kiosk',
+    title: 'MediKiosk 🏥',
+    description: 'SIH 2026 patient case-taking kiosk for the Ministry of Ayush. Patients give their health history by voice or touch in their own language, and scanned reports are read with OCR before they reach the doctor.',
+    stack: ['FastAPI', 'Postgres', 'React', 'Speech + OCR'],
+    role: 'Team of 3, top committer',
+    stars: 0,
     forks: 0,
-    language: 'JavaScript',
-    href: 'https://github.com/Aazhs/SpotiMirror',
-    updated: '2026-03-05T12:47:35Z'
+    live: 'https://medickiosk.in/'
+  },
+  {
+    name: 'winion',
+    title: 'Winion 🧅',
+    description: 'Offline Android app for SIH 2026 that grades onion lots from a single tray photo. Two on-device models find every bulb and check it for defects (96.6% accurate on unseen onions), then a rule engine applies the government quality spec.',
+    stack: ['PyTorch', 'ONNX', 'Computer Vision', 'React'],
+    role: 'Team project',
+    stars: 0,
+    forks: 0
+  },
+  {
+    name: 'RoofToGrid',
+    title: 'RoofToGrid ☀️',
+    description: 'Rooftop solar planner for Indian homes: sizes a system in three scenarios, compares installer quotes across 17+ metrics with red-flag checks, works out the PM Surya Ghar subsidy, and tracks the install to net metering.',
+    stack: ['Next.js', 'TypeScript', 'Prisma', 'Vitest'],
+    role: 'Lead developer',
+    stars: 0,
+    forks: 0,
+    href: 'https://github.com/Aazhs/RoofToGrid',
+    live: 'https://roof-to-grid.vercel.app'
+  },
+  {
+    name: 'TheCitadel',
+    title: 'The Citadel ⚔️',
+    description: 'Discord bot for a competitive programming community, with contest alerts, member onboarding, and a built-in productivity enforcer. Async Python on Postgres with migrations and a pytest suite.',
+    stack: ['Python', 'discord.py', 'SQLAlchemy', 'Postgres'],
+    role: 'Solo',
+    stars: 0,
+    forks: 0,
+    href: 'https://github.com/Aazhs/TheCitadel'
+  },
+  {
+    name: 'GLIDE',
+    title: 'GLIDE 📐',
+    description: 'OpenGL app that plots functions like a tiny Desmos and steps through classic rasterisation algorithms (DDA and Bresenham lines and circles), showing every decision variable and pixel choice as it draws.',
+    stack: ['C++', 'OpenGL', 'CMake'],
+    role: 'Solo',
+    stars: 0,
+    forks: 0
   },
   {
     name: 'datathon-2026',
     title: 'Datathon 2026 🚀',
-    description: 'Registration platform for a Hackathon organised in MITAOE, featuring an embedded Canvas space shooter game. Integrates FastAPI and Supabase for high-performance team registration.Handled 500+ registrations on website',
+    description: 'Registration platform for a hackathon at MITAOE with an embedded canvas space shooter. Built on FastAPI and Supabase, it handled 500+ team registrations.',
     stack: ['FastAPI', 'Python', 'Supabase'],
+    role: 'Lead developer',
     stars: 0,
     forks: 0,
-    language: 'Python',
-    href: 'https://github.com/Aazhs/datathon-2026',
-    updated: '2026-05-15T10:00:00Z'
-  },
-  {
-    name: 'ToS-Analyser',
-    title: 'ToS-Analyser ⚖️',
-    description: 'AI-powered full-stack prototype that analyzes Terms of Service in real-time. Features a Chrome extension and FastAPI backend using Gemini AI and ToS;DR for automated risk summaries.',
-    stack: ['Python', 'FastAPI', 'React', 'Chrome Ext'],
-    stars: 0,
-    forks: 0,
-    language: 'JavaScript',
-    href: 'https://github.com/Aazhs/ToS-Analyser',
-    updated: '2026-04-17T05:59:39Z'
+    href: 'https://github.com/Aazhs/datathon-2026'
   },
   {
     name: 'LockInApp',
     title: 'LockInApp 🔒',
-    description: 'Local-first productivity tool tracking website usage and digital habits. Provides real-time dashboards, focus-quality scoring, and daily AI-generated accountability reports via email.',
-    stack: ['Python', 'FastAPI', 'AI', 'Productivity'],
+    description: 'Local-first tracker for website usage and digital habits, with live dashboards, AI-scored focus quality, and a daily accountability report by email.',
+    stack: ['TypeScript', 'SQLite', 'Swift', 'Gemini'],
+    role: 'Solo',
     stars: 0,
     forks: 0,
-    language: 'TypeScript',
-    href: 'https://github.com/Aazhs/LockInApp',
-    updated: '2026-04-02T12:16:02Z'
+    href: 'https://github.com/Aazhs/LockInApp'
   },
   {
-    name: 'mindtone-api',
-    title: 'MindTone API 🧠',
-    description: 'Mental health sentiment analysis tool using local BERT for 3-class sentiment and Gemini for broader mental-health labels like anxiety and stress. Designed for classification and trend analysis.',
-    stack: ['Python', 'FastAPI', 'BERT', 'Gemini'],
-    stars: 0,
+    name: 'SpotiMirror',
+    title: 'SpotiMirror 🎵',
+    description: 'Privacy-first world map of live Spotify listening. Location fuzzing and pseudonyms keep listeners anonymous while you discover music on an interactive Leaflet map.',
+    stack: ['Python', 'Flask', 'React', 'Leaflet'],
+    role: 'Solo',
+    stars: 1,
     forks: 0,
-    language: 'Python',
-    href: 'https://github.com/Aazhs/sentiment-analysis-aarsh',
-    updated: '2026-05-18T12:00:00Z'
+    href: 'https://github.com/Aazhs/SpotiMirror'
   }
 ];
 
@@ -149,8 +193,6 @@ const fallbackProjects = [
 const getLinkProps = (href) =>
   href.startsWith('mailto:') ? {} : { target: '_blank', rel: 'noreferrer' };
 const cpLinkIconByLabel = Object.fromEntries(cpLinks.map((item) => [item.label, item.icon]));
-const CODECHEF_RATING = '1178';
-const CODECHEF_META = 'Current rating';
 
 function getCounterValue(data) {
   const count = Number(data?.count ?? data?.value ?? data?.data);
@@ -183,47 +225,370 @@ async function fetchCounterData(endpoint) {
   }
 }
 
+const CF_TIERS = [
+  [0, 'Newbie'], [1200, 'Pupil'], [1400, 'Specialist'], [1600, 'Expert'],
+  [1900, 'Candidate Master'], [2100, 'Master'], [2400, 'Grandmaster']
+];
+const CC_TIERS = [
+  [0, '1★'], [1400, '2★'], [1600, '3★'], [1800, '4★'], [2000, '5★'], [2200, '6★'], [2500, '7★']
+];
+
+// Where a rating sits between its tier floor and the next tier.
+function tierProgress(rating, tiers) {
+  let index = 0;
+  tiers.forEach(([floor], i) => {
+    if (rating >= floor) index = i;
+  });
+  const [floor, name] = tiers[index];
+  const next = tiers[index + 1];
+  if (!next) return { name, nextName: null, pct: 100, toGo: 0 };
+  return {
+    name,
+    nextName: next[1],
+    pct: Math.round(((rating - floor) / (next[0] - floor)) * 100),
+    toGo: next[0] - rating
+  };
+}
+
+function formatUpdated(iso) {
+  if (!iso) return null;
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+function Sparkline({ points }) {
+  if (!points?.length) return null;
+  const w = 120;
+  const h = 32;
+  const values = points.map((p) => p.r);
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const span = max - min || 1;
+  const step = w / Math.max(1, points.length - 1);
+  // Stepped path so it reads as pixels, not a smooth curve.
+  let d = '';
+  points.forEach((p, i) => {
+    const x = Math.round(i * step);
+    const y = Math.round(h - 2 - ((p.r - min) / span) * (h - 4));
+    d += i === 0 ? `M${x} ${y}` : `H${x} V${y}`;
+  });
+  return (
+    <svg className="sparkline" viewBox={`0 0 ${w} ${h}`} role="img" aria-label={`Rating moved from ${values[0]} to ${values.at(-1)} over the last ${points.length} contests`}>
+      <path d={d} />
+    </svg>
+  );
+}
+
+function XpBar({ pct, label }) {
+  const cells = 20;
+  const filled = Math.round((pct / 100) * cells);
+  return (
+    <div className="xp" role="meter" aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct} aria-label={label}>
+      {Array.from({ length: cells }, (_, i) => (
+        <span key={i} className={i < filled ? 'on' : ''} style={{ '--i': i }} />
+      ))}
+    </div>
+  );
+}
+
+function PlayerCard({ platform, stats }) {
+  const icon = cpLinkIconByLabel[platform.label];
+  let body = <p className="player-empty">Stats load on the next site build.</p>;
+
+  if (platform.key === 'codechef' && stats?.rating) {
+    const tier = tierProgress(stats.rating, CC_TIERS);
+    body = (
+      <>
+        <p className="player-rating">{stats.rating}<small>{tier.name}</small></p>
+        <XpBar pct={tier.pct} label={`Progress to ${tier.nextName}`} />
+        <p className="player-meta">
+          {tier.nextName ? `${tier.toGo} to ${tier.nextName}` : 'Top tier'}. Peak {stats.highest}, {stats.contests} contests.
+        </p>
+        <Sparkline points={stats.history} />
+      </>
+    );
+  }
+
+  if (platform.key === 'codeforces' && stats?.rating) {
+    const tier = tierProgress(stats.rating, CF_TIERS);
+    body = (
+      <>
+        <p className="player-rating">{stats.rating}<small>{tier.name}</small></p>
+        <XpBar pct={tier.pct} label={`Progress to ${tier.nextName}`} />
+        <p className="player-meta">
+          {tier.nextName ? `${tier.toGo} to ${tier.nextName}` : 'Top tier'}. Peak {stats.maxRating}.
+        </p>
+      </>
+    );
+  }
+
+  if (platform.key === 'leetcode' && stats?.solved !== undefined) {
+    const nextMilestone = Math.ceil((stats.solved + 1) / 50) * 50;
+    const pct = Math.round(((stats.solved % 50) / 50) * 100);
+    body = (
+      <>
+        <p className="player-rating">{stats.solved}<small>solved</small></p>
+        <XpBar pct={pct} label={`Progress to ${nextMilestone} solved`} />
+        <p className="player-meta">
+          {nextMilestone - stats.solved} to {nextMilestone}.
+          {stats.ranking ? ` Global rank ${stats.ranking.toLocaleString('en-US')}.` : ''}
+        </p>
+        <ul className="lc-split">
+          <li className="easy"><span>Easy</span>{stats.easy}</li>
+          <li className="medium"><span>Medium</span>{stats.medium}</li>
+          <li className="hard"><span>Hard</span>{stats.hard}</li>
+        </ul>
+      </>
+    );
+  }
+
+  return (
+    <a className={`player-card player-${platform.key}`} href={platform.href} target="_blank" rel="noreferrer">
+      <h3>
+        <img src={icon} alt="" aria-hidden="true" />
+        {platform.label}
+      </h3>
+      {body}
+    </a>
+  );
+}
+
+const DIALOGUE = [
+  'Hey, I’m Aarsh. I study Computer Science at MIT Academy of Engineering, Pune.',
+  'Most days I’m on React architecture, UI systems, and keeping my DSA streak alive.',
+  'I like shipping real products: a live lab IDE for professors, a solar planner, and kiosks and apps for SIH 2026.',
+  'Lately I’ve been deep in AI and ML: training vision models, exporting them to ONNX, and running them on a phone.',
+  'Right now I’m learning Go and Node.js for backend work.',
+  'I live in Linux, write shell scripts for everything, and automate what I can.',
+  'I also like going low-level: ARM64 assembly, C that drives the Mac trackpad’s haptics, and OpenGL graphics algorithms.'
+];
+
+function Dialogue() {
+  const reduce = useReducedMotion();
+  const [line, setLine] = useState(0);
+  const [shown, setShown] = useState(0);
+  const text = DIALOGUE[line];
+  const done = reduce || shown >= text.length;
+
+  useEffect(() => {
+    if (done) return undefined;
+    const id = setTimeout(() => setShown((n) => n + 1), 22);
+    return () => clearTimeout(id);
+  }, [shown, done]);
+
+  const advance = () => {
+    if (!done) {
+      setShown(text.length);
+      return;
+    }
+    setLine((l) => (l + 1) % DIALOGUE.length);
+    setShown(0);
+  };
+
+  return (
+    <div className="dialogue">
+      <div className="dialogue-portrait" aria-hidden="true">
+        <SpriteIcon />
+      </div>
+      <div className="dialogue-body">
+        <p className="dialogue-name">Aarsh</p>
+        <p className="dialogue-text" aria-live="polite">
+          {done ? text : text.slice(0, shown)}
+        </p>
+        <button type="button" className="dialogue-next" onClick={advance}>
+          {done ? (line === DIALOGUE.length - 1 ? 'Start over' : 'Next') : 'Skip'}
+          <span className="caret" aria-hidden="true">▾</span>
+        </button>
+        <p className="dialogue-count">{line + 1} of {DIALOGUE.length}</p>
+      </div>
+    </div>
+  );
+}
+
+// Last.fm's grey star placeholder, used when it has no cover for a track.
+const LASTFM_PLACEHOLDER = '2a96cbd8b46e442fc41c2b86b821562f';
+const artCache = new Map();
+
+// Apple's iTunes Search API has covers and genres for nearly everything on Apple Music.
+async function lookupTrack(artist, name, fallback) {
+  const key = `${artist} - ${name}`;
+  if (artCache.has(key)) return artCache.get(key);
+  let art = fallback && !fallback.includes(LASTFM_PLACEHOLDER) ? fallback : null;
+  let genre = null;
+  let durationMs = null;
+  try {
+    const term = encodeURIComponent(`${artist} ${name.replace(/\s*[([].*?[)\]]/g, '')}`);
+    const data = await fetchJsonWithTimeout(`https://itunes.apple.com/search?term=${term}&entity=song&limit=1`, 8000);
+    const hit = data?.results?.[0];
+    if (hit?.artworkUrl100) art = hit.artworkUrl100.replace('100x100bb', '300x300bb');
+    genre = hit?.primaryGenreName ?? null;
+    durationMs = hit?.trackTimeMillis ?? null;
+  } catch {
+    // Keep the Last.fm image, if any.
+  }
+  const info = { art, genre, durationMs };
+  artCache.set(key, info);
+  return info;
+}
+
+// Last.fm has no "paused" signal: a track stays "now playing" until Last.fm
+// expires it, roughly when the song would have ended. As a safeguard against a
+// stuck flag, stop showing it as live once it has been playing longer than the
+// song itself (measured from when this page first saw it).
+const LIVE_GRACE_MS = 30000;
+const DEFAULT_TRACK_MS = 5 * 60000;
+
+function useNowPlaying() {
+  const [track, setTrack] = useState(null);
+
+  useEffect(() => {
+    if (!LASTFM_USER || !LASTFM_API_KEY) return undefined;
+    let active = true;
+    let seen = { key: null, since: 0 };
+    const load = async () => {
+      try {
+        const data = await fetchJsonWithTimeout(
+          `https://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user=${LASTFM_USER}&api_key=${LASTFM_API_KEY}&format=json&limit=1`,
+          8000
+        );
+        const t = data?.recenttracks?.track?.[0];
+        if (!active || !t) return;
+        const artist = t.artist?.['#text'];
+        const { art, genre, durationMs } = await lookupTrack(
+          artist,
+          t.name,
+          t.image?.find((img) => img.size === 'extralarge')?.['#text']
+        );
+        if (!active) return;
+        const key = `${artist} - ${t.name}`;
+        const flagged = t['@attr']?.nowplaying === 'true';
+        if (!flagged) seen = { key: null, since: 0 };
+        else if (seen.key !== key) seen = { key, since: Date.now() };
+        const overdue = flagged && Date.now() - seen.since > (durationMs ?? DEFAULT_TRACK_MS) + LIVE_GRACE_MS;
+        setTrack({
+          name: t.name,
+          artist,
+          art,
+          genre,
+          mood: moodForGenre(genre),
+          url: t.url,
+          live: flagged && !overdue
+        });
+      } catch {
+        // Keep the last known track.
+      }
+    };
+    load();
+    const id = setInterval(load, 15000);
+    return () => {
+      active = false;
+      clearInterval(id);
+    };
+  }, []);
+
+  return track;
+}
+
+function NowPlaying({ track }) {
+  if (!track) return null;
+  return (
+    <a className="now-playing" href={track.url} target="_blank" rel="noreferrer">
+      {track.art ? <img src={track.art} alt="" /> : null}
+      <span className="np-text">
+        <span className="np-label">
+          {track.live ? (
+            <span className="np-bars" aria-hidden="true"><i /><i /><i /></span>
+          ) : null}
+          {track.live ? 'Listening now' : 'Last played'}
+          {track.genre ? <span className="np-genre">{track.genre}</span> : null}
+        </span>
+        <strong>{track.name}</strong>
+        <span>{track.artist}</span>
+      </span>
+    </a>
+  );
+}
+
+function SkyClock({ sky, track }) {
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(id);
+  }, []);
+  const override = new URLSearchParams(window.location.search).get('time');
+  const shown = override && !Number.isNaN(new Date(override).getTime()) ? new Date(override) : now;
+  const time = shown.toLocaleTimeString('en-IN', {
+    timeZone: 'Asia/Kolkata',
+    hour: 'numeric',
+    minute: '2-digit',
+    second: override ? undefined : '2-digit'
+  });
+  if (!sky) return null;
+  const moonUp = sky.moon.altitude > 0;
+  return (
+    <div className="sky-clock" aria-label={`Live sky over Pune: ${sky.skyName}, ${time} IST`}>
+      <p className="sky-time">{time}<small>IST</small></p>
+      <p className="sky-line">{sky.skyName} in Pune</p>
+      <p className="sky-line">
+        {sky.phaseName}, {Math.round(sky.moonFraction * 100)}% lit{moonUp ? '' : ' (below the horizon)'}
+      </p>
+      <NowPlaying track={track} />
+    </div>
+  );
+}
+
 const reveal = {
-  hidden: { opacity: 0, y: 12 },
-  show: (delay = 0) => ({
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.6, ease: 'easeOut', delay }
-  })
+  hidden: { opacity: 0, y: 8 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.2, 0.8, 0.2, 1] } }
 };
 
 function App() {
   const [repos, setRepos] = useState([]);
   const [visitCount, setVisitCount] = useState('...');
-  const [cpStats, setCpStats] = useState({
-    leetcode: { rating: 'Loading...', meta: 'Fetching live data' },
-    codechef: { rating: CODECHEF_RATING, meta: CODECHEF_META },
-    codeforces: { rating: 'Loading...', meta: 'Fetching live data' }
-  });
+  const [stats, setStats] = useState(null);
+  const [openSlot, setOpenSlot] = useState(null);
+  const [sky, setSky] = useState(null);
+  const track = useNowPlaying();
 
   useEffect(() => {
     let active = true;
-
-    async function loadGitHub() {
-      try {
-        const repoRes = await fetch('https://api.github.com/users/Aazhs/repos?per_page=100&sort=updated');
-
-        if (!repoRes.ok) {
-          return;
-        }
-
-        const repoData = await repoRes.json();
-        if (!active) {
-          return;
-        }
-
-        setRepos(Array.isArray(repoData) ? repoData : []);
-      } catch {
+    fetch('https://api.github.com/users/Aazhs/repos?per_page=100&sort=updated')
+      .then((res) => (res.ok ? res.json() : []))
+      .then((data) => {
+        if (active && Array.isArray(data)) setRepos(data);
+      })
+      .catch(() => {
         // Keep static fallback content if GitHub API is unavailable.
-      }
-    }
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
 
-    loadGitHub();
+  // stats.json is regenerated by the deploy workflow every 6 hours.
+  // Codeforces allows browser requests, so its rating is also refreshed live.
+  useEffect(() => {
+    let active = true;
+    const load = async () => {
+      let next = null;
+      try {
+        next = await fetchJsonWithTimeout(`${import.meta.env.BASE_URL}stats.json`, 8000);
+      } catch {
+        next = {};
+      }
+      try {
+        const cf = await fetchJsonWithTimeout('https://codeforces.com/api/user.info?handles=Aashj', 8000);
+        const user = cf?.result?.[0];
+        if (cf?.status === 'OK' && user) {
+          next = { ...next, codeforces: { rating: user.rating, maxRating: user.maxRating, rank: user.rank } };
+        }
+      } catch {
+        // Fall back to the build-time value.
+      }
+      if (active) setStats(next);
+    };
+    load();
     return () => {
       active = false;
     };
@@ -303,486 +668,257 @@ function App() {
     };
   }, []);
 
-  useEffect(() => {
-    let active = true;
-
-    const withTimeout = async (url, ms = 12000) => {
-      const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), ms);
-      try {
-        const response = await fetch(url, { signal: controller.signal });
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}`);
-        }
-        return await response.json();
-      } finally {
-        clearTimeout(timer);
-      }
-    };
-
-    const loadCompetitiveRatings = async () => {
-      try {
-        const [cfData, lcSolvedData] = await Promise.allSettled([
-          withTimeout('https://codeforces.com/api/user.info?handles=Aashj'),
-          withTimeout('https://alfa-leetcode-api.onrender.com/Aashz/solved')
-        ]);
-
-        if (!active) {
-          return;
-        }
-
-        const nextStats = {
-          codeforces: { rating: 'N/A', meta: 'Profile unavailable' },
-          codechef: { rating: CODECHEF_RATING, meta: CODECHEF_META },
-          leetcode: { rating: 'N/A', meta: 'Solved count unavailable' }
-        };
-
-        if (cfData.status === 'fulfilled' && cfData.value?.status === 'OK' && cfData.value?.result?.[0]) {
-          const user = cfData.value.result[0];
-          nextStats.codeforces = {
-            rating: `${user.rating ?? 'Unrated'}`,
-            meta: `Max ${user.maxRating ?? user.rating ?? '-'} · ${user.rank ?? 'user'}`
-          };
-        }
-
-        if (lcSolvedData.status === 'fulfilled') {
-          const solved = lcSolvedData.value?.solvedProblem;
-          if (solved !== undefined) {
-            nextStats.leetcode = {
-              rating: `${solved}`,
-              meta: 'Problems solved'
-            };
-          }
-        }
-
-        setCpStats(nextStats);
-      } catch {
-        if (!active) {
-          return;
-        }
-        setCpStats({
-          leetcode: { rating: 'N/A', meta: 'API unavailable' },
-          codechef: { rating: CODECHEF_RATING, meta: CODECHEF_META },
-          codeforces: { rating: 'N/A', meta: 'API unavailable' }
-        });
-      }
-    };
-
-    loadCompetitiveRatings();
-    const refreshInterval = setInterval(loadCompetitiveRatings, 1000 * 60 * 20);
-
-    return () => {
-      active = false;
-      clearInterval(refreshInterval);
-    };
-  }, []);
-
   const featuredProjects = useMemo(() => {
-    const repoMap = new Map();
-    if (repos.length) {
-      repos.forEach((repo) => {
-        repoMap.set(repo.name.toLowerCase(), repo);
-      });
-    }
-
+    const repoMap = new Map(repos.map((repo) => [repo.name.toLowerCase(), repo]));
     return fallbackProjects.map((fallback) => {
       const liveRepo = repoMap.get(fallback.name.toLowerCase());
-      if (!liveRepo) {
-        return fallback;
-      }
-
+      if (!liveRepo) return fallback;
       return {
         ...fallback,
         stars: liveRepo.stargazers_count ?? fallback.stars,
         forks: liveRepo.forks_count ?? fallback.forks,
-        updated: liveRepo.pushed_at ?? fallback.updated,
-        stack: fallback.stack,
         href: liveRepo.html_url ?? fallback.href
       };
-    }).slice(0, 6);
+    });
   }, [repos]);
 
-  const quickStats = [
-    { label: 'Location', value: 'Pune, India' },
-    { label: 'Role', value: 'CS Student | Builder | Tinkerer' }
-  ];
+  const updatedLabel = formatUpdated(stats?.updatedAt);
 
   return (
     <div className="page">
       <header className="topbar">
-        <a className="brand" href="#home">
-          <span className="brand-mark">AJ</span>
-          <span className="brand-copy">
-            <strong>Aarsh</strong>
-            <small>Portfolio</small>
-          </span>
+        <a className="brand" href="#home" aria-label="Aarsh Joshi, back to top">
+          <span className="brand-mark" aria-hidden="true">AJ</span>
         </a>
-        <nav>
+        <nav aria-label="Sections">
+          <a href="#stats">Stats</a>
           <a href="#about">About</a>
           <a href="#projects">Projects</a>
-          <a href="#skills">Skills</a>
+          <a href="#skills">Stack</a>
           <a href="#contact">Contact</a>
         </nav>
       </header>
 
       <main>
         <section className="hero" id="home">
-          <motion.div className="hero-copy" variants={reveal} initial="hidden" animate="show">
-            <p className="kicker">B.Tech CS (SY) @ MITAOE, Pune</p>
-            <h1>
-              Aarsh Joshi
-              <span>Builds polished web experiences and practical dev tools.</span>
+          <PixelScene onSky={setSky} music={track?.live ? track.mood : null} />
+          <SkyClock sky={sky} track={track} />
+          <div className="hero-copy">
+            <h1 className="hero-title">
+              <span>Aarsh</span>
+              <span>Joshi</span>
             </h1>
             <p className="lede">
-              Linux-first tinkerer with a strong frontend eye, currently leveling up React,
-              Go, backend fundamentals, DSA, and system-level C++ while shipping useful products.
+              CS student at MITAOE, Pune. I build polished web experiences and practical
+              dev tools, train ML models that run on-device, and I&apos;m leveling up Go and C++.
             </p>
             <div className="cta-row">
               <a className="btn btn-primary" href="https://github.com/Aazhs" target="_blank" rel="noreferrer">
                 View GitHub
               </a>
-              <a
-                className="btn btn-ghost"
-                href="https://www.linkedin.com/in/aarsh-joshi-3b40373aa/"
-                target="_blank"
-                rel="noreferrer"
-              >
+              <a className="btn" href="https://www.linkedin.com/in/aarsh-joshi-3b40373aa/" target="_blank" rel="noreferrer">
                 LinkedIn
               </a>
-              <a className="btn btn-ghost" href="mailto:aarshjozhi@gmail.com">
-                Email Me
+              <a className="btn" href={`mailto:${CONTACT_EMAIL}`}>
+                Email me
               </a>
             </div>
-           
-            <div className="cp-row">
-              {cpLinks.map((item) => (
-                <a
-                  key={item.label}
-                  href={item.href}
-                  className="cp-link"
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  <img src={item.icon} alt="" aria-hidden="true" />
-                  <span className="cp-content">
-                    <strong>{item.label}: {cpStats[item.key]?.rating ?? 'N/A'}</strong>
-                    <small>{cpStats[item.key]?.meta ?? 'Loading'}</small>
-                  </span>
-                </a>
-              ))}
-            </div>
-          </motion.div>
-
-          <motion.div className="hero-art" variants={reveal} initial="hidden" animate="show" custom={0.18}>
-            <div className="art-frame floating">
-              <img src="/images/profile-theme.png" alt="Pixel-art inspired profile theme" />
-            </div>
-            <div className="stats-grid">
-              {quickStats.map((stat) => (
-                <div key={stat.label} className="stat-card">
-                  <span>{stat.label}</span>
-                  <strong>{stat.value}</strong>
-                </div>
-              ))}
-            </div>
-          </motion.div>
-        </section>
-
-        <section className="about section" id="about">
-          <motion.div className="section-heading" variants={reveal} initial="hidden" whileInView="show" viewport={{ once: true }}>
-            <p>About Me</p>
-            <h2>Engineer mindset. Designer taste. Builder energy.</h2>
-          </motion.div>
-
-          <div className="about-grid">
-            <motion.article className="code-card" variants={reveal} initial="hidden" whileInView="show" custom={0.1} viewport={{ once: true }}>
-              <div className="terminal-dots" aria-hidden="true">
-                <span />
-                <span />
-                <span />
-              </div>
-              <pre className="code-block" aria-label="C++ profile snippet">
-                <code>
-                  <span className="code-keyword">class</span>{' '}
-                  <span className="code-type">Aazh</span>{' '}
-                  <span className="code-punct">&#123;</span>
-                  <br />
-                  <span className="code-indent">{'  '}</span>
-                  <span className="code-keyword">public</span>
-                  <span className="code-punct">:</span>
-                  <br />
-                  <span className="code-indent">{'  '}</span>
-                  <span className="code-namespace">std</span>
-                  <span className="code-punct">::</span>
-                  <span className="code-type">string</span>{' '}
-                  <span className="code-field">name</span>{' '}
-                  <span className="code-operator">=</span>{' '}
-                  <span className="code-string">&quot;Aarsh Joshi&quot;</span>
-                  <span className="code-punct">;</span>
-                  <br />
-                  <span className="code-indent">{'  '}</span>
-                  <span className="code-namespace">std</span>
-                  <span className="code-punct">::</span>
-                  <span className="code-type">string</span>{' '}
-                  <span className="code-field">degree</span>{' '}
-                  <span className="code-operator">=</span>{' '}
-                  <span className="code-string">&quot;B.Tech CS (SY) @ MITAOE, Pune&quot;</span>
-                  <span className="code-punct">;</span>
-                  <br />
-                  <span className="code-indent">{'  '}</span>
-                  <span className="code-namespace">std</span>
-                  <span className="code-punct">::</span>
-                  <span className="code-type">string</span>{' '}
-                  <span className="code-field">focus</span>
-                  <span className="code-punct">[]</span>{' '}
-                  <span className="code-operator">=</span>{' '}
-                  <span className="code-punct">&#123;</span>
-                  <br />
-                  <span className="code-indent">{'    '}</span>
-                  <span className="code-string">&quot;React &amp; scalable web apps&quot;</span>
-                  <span className="code-punct">,</span>
-                  <br />
-                  <span className="code-indent">{'    '}</span>
-                  <span className="code-string">&quot;LeetCode + Codeforces grind&quot;</span>
-                  <span className="code-punct">,</span>
-                  <br />
-                  <span className="code-indent">{'    '}</span>
-                  <span className="code-string">&quot;System-level C++ + learning Go/Node backend&quot;</span>
-                  <br />
-                  <span className="code-indent">{'  '}</span>
-                  <span className="code-punct">&#125;</span>
-                  <span className="code-punct">;</span>
-                  <br />
-                  <br />
-                  <span className="code-indent">{'  '}</span>
-                  <span className="code-namespace">std</span>
-                  <span className="code-punct">::</span>
-                  <span className="code-type">string</span>{' '}
-                  <span className="code-function">currentlyBuilding</span>
-                  <span className="code-punct">()</span>{' '}
-                  <span className="code-punct">&#123;</span>
-                  <br />
-                  <span className="code-indent">{'    '}</span>
-                  <span className="code-keyword">return</span>{' '}
-                  <span className="code-string">&quot;Interactive frontends + practical dev tools&quot;</span>
-                  <span className="code-punct">;</span>
-                  <br />
-                  <span className="code-indent">{'  '}</span>
-                  <span className="code-punct">&#125;</span>
-                  <br />
-                  <span className="code-punct">&#125;</span>
-                  <span className="code-punct">;</span>
-                </code>
-              </pre>
-            </motion.article>
-
-            <motion.article className="bullet-card" variants={reveal} initial="hidden" whileInView="show" custom={0.2} viewport={{ once: true }}>
-              <ul>
-                <li>Pursuing Computer Science at MIT Academy of Engineering, Pune.</li>
-                <li>Focused on React architecture, scalable UI systems, and DSA consistency.</li>
-                <li>Building practical apps, audit tools, and developer-first interfaces.</li>
-                <li>Currently learning Go and Node.js backend development.</li>
-                <li>Comfortable with Linux, shell scripting, and automation workflows.</li>
-                <li>Interested in digital logic and computer systems at the metal layer.</li>
-              </ul>
-            </motion.article>
           </div>
+          <p className="hero-hint" aria-hidden="true">
+            <span className="hint-keys"><kbd>←</kbd><kbd>→</kbd> walk <kbd>↑</kbd> jump, or click the ground</span>
+            <span className="hint-touch">Tap the ground to move</span>
+          </p>
         </section>
 
-        <section className="skills section" id="skills">
-          <motion.div className="section-heading" variants={reveal} initial="hidden" whileInView="show" viewport={{ once: true }}>
-            <p>Stack</p>
-            <h2>Technologies I use to ship and learn fast.</h2>
-          </motion.div>
-
-          <div className="tech-stack">
-            {techStackGroups.map((group, index) => (
-              <motion.article
-                className="tech-panel"
-                key={group.title}
-                variants={reveal}
-                initial="hidden"
-                whileInView="show"
-                custom={index * 0.1}
-                viewport={{ once: true }}
-              >
-                <div className="tech-panel-head">
-                  <span className="tech-index">0{index + 1}</span>
-                  <div>
-                    <h3>{group.title}</h3>
-                    <p>{group.note}</p>
-                  </div>
-                </div>
-                <div className="tech-grid">
-                  {group.items.map((tech) => (
-                    <span className="tech-chip" key={tech.name}>
-                      <span className="tech-icon">
-                        <img src={tech.icon} alt="" loading="lazy" />
-                      </span>
-                      <span>{tech.name}</span>
-                    </span>
-                  ))}
-                </div>
-              </motion.article>
+        <section className="section" id="stats">
+          <div className="section-heading">
+            <h2>Player stats</h2>
+            <p>
+              Competitive programming ratings, pulled from each site
+              {updatedLabel ? `, last updated ${updatedLabel}` : ''}.
+            </p>
+          </div>
+          <div className="player-grid">
+            {cpLinks.map((platform) => (
+              <PlayerCard key={platform.key} platform={platform} stats={stats?.[platform.key]} />
             ))}
-            <motion.div className="tech-focus" variants={reveal} initial="hidden" whileInView="show" custom={0.3} viewport={{ once: true }}>
-              <span>Currently sharpening</span>
-              <strong>Go</strong>
-              <strong>Node.js</strong>
-              <strong>Backend APIs</strong>
-              <strong>System design basics</strong>
-            </motion.div>
           </div>
         </section>
 
-        <section className="projects section" id="projects">
-          <motion.div className="section-heading" variants={reveal} initial="hidden" whileInView="show" viewport={{ once: true }}>
-            <p>Featured Projects</p>
-            <h2>GitHub projects.</h2>
-          </motion.div>
+        <section className="section" id="about">
+          <div className="section-heading">
+            <h2>About me</h2>
+          </div>
+          <Dialogue />
+        </section>
 
-          <div className="project-grid">
-            {featuredProjects.map((project, index) => (
+        <section className="section" id="projects">
+          <div className="section-heading">
+            <h2>Quest log</h2>
+            <p>Things I&apos;ve shipped, synced with GitHub for stars and forks.</p>
+          </div>
+          <div className="quest-grid">
+            {featuredProjects.map((project) => (
               <motion.article
-                className="project-card"
+                className="quest"
                 key={project.name}
                 variants={reveal}
                 initial="hidden"
                 whileInView="show"
-                custom={(index % 3) * 0.1}
-                viewport={{ once: true }}
-                whileHover={{ y: -6 }}
+                viewport={{ once: true, margin: '-60px' }}
               >
-                <div className="project-top">
+                <div className="quest-top">
                   <h3>{project.title}</h3>
-                  <span>★ {project.stars} · ⑂ {project.forks}</span>
+                  {project.href ? (
+                    <span className="quest-loot" aria-label={`${project.stars} stars, ${project.forks} forks`}>
+                      ★ {project.stars} ⑂ {project.forks}
+                    </span>
+                  ) : null}
                 </div>
+                {project.role ? <p className="quest-role">{project.role}</p> : null}
                 <p>{project.description}</p>
-                <div className="project-tags">
+                <ul className="quest-tags" aria-label="Built with">
                   {project.stack.map((tag) => (
-                    <span key={tag}>{tag}</span>
+                    <li key={tag}>{tag}</li>
                   ))}
+                </ul>
+                <div className="quest-links">
+                  {project.live ? (
+                    <a className="quest-link" href={project.live} target="_blank" rel="noreferrer">
+                      Visit live site
+                    </a>
+                  ) : null}
+                  {project.href ? (
+                    <a className="quest-link" href={project.href} target="_blank" rel="noreferrer">
+                      Open repository
+                    </a>
+                  ) : null}
+                  {!project.live && !project.href ? <span className="quest-private">Private repository</span> : null}
                 </div>
-                <a href={project.href} target="_blank" rel="noreferrer">
-                  Open Repository
-                </a>              </motion.article>
+              </motion.article>
             ))}
           </div>
         </section>
 
-        <section className="journey section">
-          <motion.div className="section-heading" variants={reveal} initial="hidden" whileInView="show" viewport={{ once: true }}>
-            <p>Journey</p>
-            <h2>From foundations to production-ready builds.</h2>
-          </motion.div>
-
-          <div className="timeline">
-            <motion.article className="timeline-card" variants={reveal} initial="hidden" whileInView="show" viewport={{ once: true }}>
-              <span>2022 - 2025</span>
-              <h3>Narayana School</h3>
-              <p>Thane, Maharashtra</p>
-            </motion.article>
-            <motion.article className="timeline-card" variants={reveal} initial="hidden" whileInView="show" custom={0.1} viewport={{ once: true }}>
-              <span>2025 - 2029</span>
-              <h3>MIT Academy of Engineering</h3>
-              <p>B.Tech in Computer Science, Alandi (Pune)</p>
-            </motion.article>
-            <motion.article className="timeline-card" variants={reveal} initial="hidden" whileInView="show" custom={0.2} viewport={{ once: true }}>
-              <span>Now</span>
-              <h3>Current Focus</h3>
-              <p>Scalable React frontends, daily DSA, and learning Go + Node.js backend engineering.</p>
-            </motion.article>
+        <section className="section" id="skills">
+          <div className="section-heading">
+            <h2>Inventory</h2>
+            <p>Tools I reach for. Currently sharpening Go, Node.js, backend APIs, and system design.</p>
+          </div>
+          <div className="inventory">
+            {techStackGroups.map((group) => (
+              <div className="inv-group" key={group.title}>
+                <h3>{group.title}</h3>
+                <ul className="inv-grid">
+                  {group.items.map((tech) => {
+                    const id = `${group.title}-${tech.name}`;
+                    return (
+                      <li key={tech.name}>
+                        <button
+                          type="button"
+                          className={`inv-slot${openSlot === id ? ' active' : ''}`}
+                          onClick={() => setOpenSlot(openSlot === id ? null : id)}
+                          aria-label={tech.name}
+                        >
+                          <img src={tech.icon} alt="" loading="lazy" />
+                          <span className="inv-name">{tech.name}</span>
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            ))}
           </div>
         </section>
 
-        <section className="contact section" id="contact">
-          <div className="contact-stack">
-            <motion.div className="contact-card" variants={reveal} initial="hidden" whileInView="show" viewport={{ once: true }}>
-              <p className="contact-kicker">Let&apos;s collaborate</p>
-              <h2>Open to building cool things with serious execution.</h2>
-              <p className="contact-note">
-                Drop a message with your idea, timeline, or question. I usually reply within a day.
-              </p>
-              <div className="contact-links">
-                {socialLinks.map((item) => (
-                  <a
-                    key={item.label}
-                    href={item.href}
-                    className={cpLinkIconByLabel[item.label] ? 'contact-link-strong' : ''}
-                    {...getLinkProps(item.href)}
-                  >
+        <section className="section" id="journey">
+          <div className="section-heading">
+            <h2>Level map</h2>
+          </div>
+          <ol className="level-map">
+            <li>
+              <span className="level-node" aria-hidden="true">1</span>
+              <p className="level-when">2022–2025</p>
+              <h3>Narayana School</h3>
+              <p>Thane, Maharashtra</p>
+            </li>
+            <li>
+              <span className="level-node" aria-hidden="true">2</span>
+              <p className="level-when">2025–2029</p>
+              <h3>MIT Academy of Engineering</h3>
+              <p>B.Tech in Computer Science, Alandi (Pune)</p>
+            </li>
+            <li className="current">
+              <span className="level-node" aria-hidden="true">
+                <span className="level-player" />
+              </span>
+              <p className="level-when">You are here</p>
+              <h3>Current focus</h3>
+              <p>Scalable React frontends, daily DSA, and learning Go and Node.js.</p>
+            </li>
+          </ol>
+        </section>
+
+        <section className="section contact" id="contact">
+          <div className="contact-intro">
+            <h2>Save point</h2>
+            <p>
+              Send an idea, a timeline, or a question. I usually reply within a day.
+            </p>
+            <ul className="contact-links">
+              {socialLinks.map((item) => (
+                <li key={item.label}>
+                  <a href={item.href} {...getLinkProps(item.href)}>
                     {cpLinkIconByLabel[item.label] ? (
-                      <img
-                        src={cpLinkIconByLabel[item.label]}
-                        alt=""
-                        aria-hidden="true"
-                        className="contact-link-icon"
-                      />
+                      <img src={cpLinkIconByLabel[item.label]} alt="" aria-hidden="true" />
                     ) : null}
                     {item.label}
                   </a>
-                ))}
-              </div>
-            </motion.div>
-
-            <motion.div
-              className="contact-form-card"
-              variants={reveal}
-              initial="hidden"
-              whileInView="show"
-              viewport={{ once: true }}
-              custom={0.1}
-            >
-              <form className="contact-form" action={CONTACT_FORM_ENDPOINT} method="POST">
-                <input type="hidden" name="_subject" value="New portfolio message" />
-                <div className="contact-row">
-                  <label className="contact-field">
-                    <span>Name</span>
-                    <input
-                      type="text"
-                      name="name"
-                      placeholder="Your name"
-                      autoComplete="name"
-                      required
-                      pattern="^[A-Za-z\s]+$"
-                      title="Please enter only letters and spaces."
-                      onKeyDown={(e) => {
-                        if (!/^[a-zA-Z\s]$/.test(e.key) && e.key.length === 1) {
-                          e.preventDefault();
-                        }
-                      }}
-                    />
-                  </label>
-                  <label className="contact-field">
-                    <span>Email</span>
-                    <input type="email" name="email" placeholder="you@example.com" autoComplete="email" required />
-                  </label>
-                </div>
-                <label className="contact-field">
-                  <span>Subject</span>
-                  <input type="text" name="subject" placeholder="Project, question, or hello" />
-                </label>
-                <label className="contact-field">
-                  <span>Message</span>
-                  <textarea name="message" rows="5" placeholder="Enter your message here..." required />
-                </label>
-                <div className="contact-actions">
-                  <button className="btn btn-primary" type="submit">
-                    Send Message
-                  </button>
-                  <button className="btn btn-ghost" type="reset">
-                    Clear All
-                  </button>
-                </div>
-              </form>
-            </motion.div>
+                </li>
+              ))}
+            </ul>
           </div>
-        </section>
 
-        <footer className="site-footer">
-          <p>Unique visits: {visitCount}</p>
-        </footer>
+          <form className="contact-form" action={CONTACT_FORM_ENDPOINT} method="POST">
+            <input type="hidden" name="_subject" value="New portfolio message" />
+            <div className="contact-row">
+              <label className="field">
+                <span>Name</span>
+                <input
+                  type="text"
+                  name="name"
+                  placeholder="Your name"
+                  autoComplete="name"
+                  required
+                  pattern="^[A-Za-z\s]+$"
+                  title="Use letters and spaces only."
+                />
+              </label>
+              <label className="field">
+                <span>Email</span>
+                <input type="email" name="email" placeholder="you@example.com" autoComplete="email" required />
+              </label>
+            </div>
+            <label className="field">
+              <span>Subject</span>
+              <input type="text" name="subject" placeholder="Project, question, or hello" />
+            </label>
+            <label className="field">
+              <span>Message</span>
+              <textarea name="message" rows="5" placeholder="What are you working on?" required />
+            </label>
+            <div className="contact-actions">
+              <button className="btn btn-primary" type="submit">Send message</button>
+              <button className="btn" type="reset">Clear</button>
+            </div>
+          </form>
+        </section>
       </main>
+
+      <footer className="site-footer">
+        <p>Visitors so far: {visitCount}</p>
+      </footer>
     </div>
   );
 }

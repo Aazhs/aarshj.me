@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "stats": "node scripts/fetch-stats.mjs",
+    "prebuild": "node scripts/fetch-stats.mjs",
     "build": "vite build",
     "preview": "vite preview"
   },
