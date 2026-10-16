@@ -5,9 +5,11 @@ import { moodForGenre } from './music';
 
 const CONTACT_EMAIL = 'aarshjozhi@gmail.com';
 const CONTACT_FORM_ENDPOINT = 'https://formspree.io/f/xjglvljd';
-const VISIT_COUNTER_BASE_URL = 'https://api.counterapi.dev/v1/aazhs-portfolio/unique-visits';
+// Abacus: free, keyless counter (counterapi.dev v1 was shut down).
+const VISIT_COUNTER_BASE_URL = 'https://abacus.jasoncameron.dev';
+const VISIT_COUNTER_KEY = 'aarshj-me/visits';
 const VISIT_COUNTER_PROXY_BASE_URL = 'https://api.codetabs.com/v1/proxy/?quest=';
-const VISIT_COUNTER_STORAGE_KEY = 'aarsh_counterapi_unique_visit_recorded_v1';
+const VISIT_COUNTER_STORAGE_KEY = 'aarsh_abacus_visit_recorded_v1';
 const VISIT_COUNTER_CACHE_KEY = 'aarsh_unique_visit_count_cache_v1';
 const VISIT_COUNTER_TIMEOUT_MS = 6500;
 // Now playing: Apple Music scrobbles to Last.fm via a scrobbler app. Leave empty to hide the widget.
@@ -634,8 +636,8 @@ function App() {
       try {
         const hasRecordedVisit = readFlag(VISIT_COUNTER_STORAGE_KEY);
         const endpoint = hasRecordedVisit
-          ? `${VISIT_COUNTER_BASE_URL}/`
-          : `${VISIT_COUNTER_BASE_URL}/up`;
+          ? `${VISIT_COUNTER_BASE_URL}/get/${VISIT_COUNTER_KEY}`
+          : `${VISIT_COUNTER_BASE_URL}/hit/${VISIT_COUNTER_KEY}`;
         const data = await fetchCounterData(endpoint);
         if (!active) {
           return;
