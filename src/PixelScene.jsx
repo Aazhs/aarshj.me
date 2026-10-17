@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import {
-  applyPageTheme, bloodTint, milkyWayPoints, moonColour, skyPalette, skyState, starColour, starTransform
+  applyPageTheme, bloodTint, milkyWayPoints, previewTime, moonColour, skyPalette, skyState, starColour, starTransform
 } from './sky';
 import STARS from './stars.json';
 
@@ -224,9 +224,7 @@ function drawLamp(ctx, x, groundY, night) {
 
 // `?time=2026-10-16T18:05+05:30` previews the sky at another moment.
 function sceneDate() {
-  const override = new URLSearchParams(window.location.search).get('time');
-  const parsed = override ? new Date(override) : null;
-  return parsed && !Number.isNaN(parsed.getTime()) ? parsed : new Date();
+  return previewTime() ?? new Date();
 }
 
 export function SpriteIcon({ rows = SPRITE_IDLE }) {

@@ -122,11 +122,33 @@ function moonEvent(date, moonAltDeg, fraction, distKm) {
   return null;
 }
 
+// Preview helpers: ?time=2026-10-18T18:05+05:30 and ?moon=blood|super|blue|low.
+// A literal "+" in a query string arrives as a space, so put it back.
+export function previewTime() {
+  if (typeof window === 'undefined') return null;
+  const raw = new URLSearchParams(window.location.search).get('time');
+  if (!raw) return null;
+  const parsed = new Date(raw.trim().replace(' ', '+'));
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function previewMoon() {
+  if (typeof window === 'undefined') return null;
+  return new URLSearchParams(window.location.search).get('moon');
+}
+
 export function skyState(date = new Date(), { lat, lng } = PUNE) {
   const d = toDays(date);
-  const sun = position(sunCoords(d), d, lat, lng);
-  const moon = position(moonCoords(d), d, lat, lng);
-  const illum = moonIllumination(d);
+  let sun = position(sunCoords(d), d, lat, lng);
+  let moon = position(moonCoords(d), d, lat, lng);
+  let illum = moonIllumination(d);
+  // Moon previews: show a full moon high in a night sky, unless a time is also given.
+  const forced = previewMoon();
+  if (forced && !previewTime()) {
+    sun = { azimuth: Math.PI * 0.9, altitude: -RAD * 30 };
+    moon = { azimuth: RAD * 25, altitude: RAD * (forced === 'low' ? 3 : 38) };
+    if (forced !== 'low') illum = { fraction: 1, phase: 0.5 };
+  }
   const sunAltDeg = sun.altitude / RAD;
   const moonAltDeg = moon.altitude / RAD;
   return {

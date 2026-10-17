@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import PixelScene, { SpriteIcon } from './PixelScene';
 import { moodForGenre } from './music';
+import { previewTime } from './sky';
 
 const CONTACT_EMAIL = 'aarshjozhi@gmail.com';
 const CONTACT_FORM_ENDPOINT = 'https://formspree.io/f/xjglvljd';
@@ -518,8 +519,8 @@ function SkyClock({ sky, track }) {
     const id = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(id);
   }, []);
-  const override = new URLSearchParams(window.location.search).get('time');
-  const shown = override && !Number.isNaN(new Date(override).getTime()) ? new Date(override) : now;
+  const override = previewTime();
+  const shown = override ?? now;
   const time = shown.toLocaleTimeString('en-IN', {
     timeZone: 'Asia/Kolkata',
     hour: 'numeric',
