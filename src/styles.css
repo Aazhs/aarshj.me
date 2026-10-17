@@ -282,6 +282,10 @@ kbd {
   color: var(--ink-soft);
 }
 
+.sky-line.sky-event {
+  color: var(--gold);
+}
+
 .now-playing {
   display: flex;
   gap: 10px;

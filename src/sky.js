@@ -79,13 +79,60 @@ function skyName(sunAltDeg, rising) {
   return 'Day';
 }
 
+// Total lunar eclipses (greatest eclipse, UTC). The moon turns red only while
+// it is actually up over Pune, so not every entry shows on the site.
+const TOTAL_ECLIPSES = [
+  '2026-03-03T11:33Z', '2028-12-31T16:52Z', '2029-06-26T03:22Z', '2029-12-20T22:42Z',
+  '2032-04-25T15:13Z', '2032-10-18T19:02Z', '2033-04-14T19:13Z', '2033-10-08T10:55Z'
+].map((iso) => new Date(iso).getTime());
+const ECLIPSE_WINDOW_MS = 110 * 60000;
+
+// How red the eclipse makes the moon right now: 0 outside, 1 at greatest eclipse.
+function eclipseStrength(date) {
+  const gap = Math.min(...TOTAL_ECLIPSES.map((t) => Math.abs(date.getTime() - t)));
+  return gap > ECLIPSE_WINDOW_MS ? 0 : (1 + Math.cos((Math.PI * gap) / ECLIPSE_WINDOW_MS)) / 2;
+}
+
+// Blue moon: the second full moon in the same calendar month (IST).
+function isBlueMoon(date) {
+  const ist = new Date(date.getTime() + 5.5 * 3600000);
+  const y = ist.getUTCFullYear();
+  const m = ist.getUTCMonth();
+  const fraction = (day) => moonIllumination(toDays(new Date(Date.UTC(y, m, day, 18, 30)))).fraction;
+  const fullDays = [];
+  for (let day = 1; day <= 31; day += 1) {
+    if (new Date(Date.UTC(y, m, day)).getUTCMonth() !== m) break;
+    const f = fraction(day);
+    if (f > 0.97 && f >= fraction(day - 1) && f >= fraction(day + 1)) fullDays.push(day);
+  }
+  return fullDays.length >= 2 && ist.getUTCDate() >= fullDays[1] - 1 && ist.getUTCDate() <= fullDays[1] + 1;
+}
+
+// Special moons, previewable with ?moon=blood|super|blue|low.
+function moonEvent(date, moonAltDeg, fraction, distKm) {
+  const forced = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('moon');
+  if (forced === 'blood') return { kind: 'blood', strength: 1, label: 'Blood moon (total lunar eclipse)' };
+  if (forced === 'super') return { kind: 'super', strength: 1, label: 'Supermoon' };
+  if (forced === 'blue') return { kind: 'blue', strength: 1, label: 'Blue moon' };
+  if (forced === 'low') return { kind: 'low', strength: 1, label: 'Moon low on the horizon' };
+  const eclipse = eclipseStrength(date);
+  if (eclipse > 0 && moonAltDeg > 0) return { kind: 'blood', strength: eclipse, label: 'Blood moon (total lunar eclipse)' };
+  if (fraction > 0.97 && distKm < 367500) return { kind: 'super', strength: 1, label: 'Supermoon' };
+  if (fraction > 0.97 && isBlueMoon(date)) return { kind: 'blue', strength: 1, label: 'Blue moon' };
+  return null;
+}
+
 export function skyState(date = new Date(), { lat, lng } = PUNE) {
   const d = toDays(date);
   const sun = position(sunCoords(d), d, lat, lng);
   const moon = position(moonCoords(d), d, lat, lng);
   const illum = moonIllumination(d);
   const sunAltDeg = sun.altitude / RAD;
+  const moonAltDeg = moon.altitude / RAD;
   return {
+    moonAltDeg,
+    moonDist: moonCoords(d).dist,
+    moonEvent: moonEvent(date, moonAltDeg, illum.fraction, moonCoords(d).dist),
     sun,
     moon,
     sunAltDeg,
@@ -172,4 +219,43 @@ export function applyPageTheme(p) {
   const root = document.documentElement.style;
   Object.entries(pageTheme(p)).forEach(([key, value]) => root.setProperty(key, value));
   document.querySelector('meta[name="theme-color"]')?.setAttribute('content', pageTheme(p)['--night']);
+}
+
+const BLOOD = {
+  skyTop: '#1a0608', sky: '#2e0b0e', skyLow: '#4a1414', haze: '#6b1f1c',
+  cloud: '#3a1012', cloudLight: '#52181a', far: '#3d1214', peak: '#5a1c1a',
+  peakShade: '#401314', mid: '#2a0b0d', near: '#1c0709', ground: '#120405',
+  rim: '#ff8a6a', pine: '#0c0304'
+};
+
+// Blend a palette towards the blood-moon reds by `amount` (0..1).
+export function bloodTint(palette, amount) {
+  if (amount <= 0) return palette;
+  const out = { ...palette };
+  Object.keys(BLOOD).forEach((key) => {
+    if (!out[key]) return;
+    const x = hexToRgb(out[key]);
+    const y = hexToRgb(BLOOD[key]);
+    out[key] = rgbToHex(x.map((v, i) => v + (y[i] - v) * amount));
+  });
+  return out;
+}
+
+// Moon colour: cream high up, amber then orange-red near the horizon
+// (more atmosphere in the way), copper-red in a total eclipse.
+export function moonColour(state) {
+  const ev = state.moonEvent;
+  if (ev?.kind === 'blood') return mixHex('#fff6e3', '#b83a24', ev.strength);
+  if (ev?.kind === 'blue') return '#d6e6ff';
+  if (ev?.kind === 'low') return '#ff8a4c';
+  const alt = state.moonAltDeg;
+  if (alt < 4) return mixHex('#ff8a4c', '#ffc27a', Math.max(0, alt) / 4);
+  if (alt < 14) return mixHex('#ffc27a', '#fff6e3', (alt - 4) / 10);
+  return '#fff6e3';
+}
+
+function mixHex(a, b, t) {
+  const x = hexToRgb(a);
+  const y = hexToRgb(b);
+  return rgbToHex(x.map((v, i) => v + (y[i] - v) * Math.max(0, Math.min(1, t))));
 }

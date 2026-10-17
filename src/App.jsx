@@ -532,6 +532,7 @@ function SkyClock({ sky, track }) {
     <div className="sky-clock" aria-label={`Live sky over Pune: ${sky.skyName}, ${time} IST`}>
       <p className="sky-time">{time}<small>IST</small></p>
       <p className="sky-line">{sky.skyName} in Pune</p>
+      {sky.moonEvent ? <p className="sky-line sky-event">{sky.moonEvent.label}</p> : null}
       <p className="sky-line">
         {sky.phaseName}, {Math.round(sky.moonFraction * 100)}% lit{moonUp ? '' : ' (below the horizon)'}
       </p>

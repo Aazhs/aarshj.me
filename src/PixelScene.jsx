@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { applyPageTheme, skyPalette, skyState } from './sky';
+import { applyPageTheme, bloodTint, moonColour, skyPalette, skyState } from './sky';
 
 // Low-res canvas scaled up with image-rendering: pixelated.
 const PIXEL = 4;
@@ -68,6 +68,12 @@ const SPRITE_ARMS = [
 ];
 const NOTE = ['.11', '.1.', '.1.', '11.', '11.'];
 export const SPRITE_COLORS = { 1: '#2a1b2e', 2: '#f2c9a8', 3: '#8fd3c9', 4: '#3f2740', 5: '#1b1120', 6: '#2a1b2e' };
+
+// Slightly darker version of a colour, for the moon's maria.
+function shadeHex(hex) {
+  const v = [1, 3, 5].map((i) => Math.round(parseInt(hex.slice(i, i + 2), 16) * 0.88));
+  return `#${v.map((n) => n.toString(16).padStart(2, '0')).join('')}`;
+}
 
 function seededNoise(seed) {
   let s = seed;
@@ -215,7 +221,10 @@ export default function PixelScene({ onSky, music }) {
 
     function updateSky() {
       sky = skyState(sceneDate());
-      Object.assign(PALETTE, skyPalette(sky.sunAltDeg));
+      const ev = sky.moonEvent;
+      const blood = ev?.kind === 'blood' ? ev.strength : 0;
+      Object.assign(PALETTE, bloodTint(skyPalette(sky.sunAltDeg), blood * 0.85));
+      PALETTE.moonLit = moonColour(sky);
       applyPageTheme(PALETTE);
       // 0 in daylight, 1 once the sun is well below the horizon.
       night = Math.max(0, Math.min(1, (-sky.sunAltDeg - 2) / 10));
@@ -383,7 +392,16 @@ export default function PixelScene({ onSky, music }) {
     function drawMoon() {
       if (sky.moon.altitude < -0.05) return;
       const { x, y } = project(sky.moon);
-      const r = Math.round(Math.min(W, H) * 0.075);
+      const ev = sky.moonEvent;
+      const r = Math.round(Math.min(W, H) * (ev?.kind === 'super' ? 0.095 : 0.075));
+      const glow = ev?.kind === 'blood' ? '#c4402a' : ev?.kind === 'blue' ? '#9cc4ff' : ev?.kind === 'super' ? PALETTE.moonLit : null;
+      if (glow && night > 0.2) {
+        [[r + 7, 0.08], [r + 3, 0.16]].forEach(([rr, a]) => {
+          ctx.globalAlpha = a * night * (ev.strength ?? 1);
+          disc(x, y, rr, () => glow);
+        });
+        ctx.globalAlpha = 1;
+      }
       // Terminator: k runs 1 (new) to -1 (full) and back.
       const k = Math.cos(2 * Math.PI * sky.moonPhase);
       const waxing = sky.moonPhase < 0.5;
@@ -394,7 +412,7 @@ export default function PixelScene({ onSky, music }) {
         if (!lit) return dark;
         // A few maria so it reads as the moon.
         const mare = (nx + 0.3) ** 2 + (ny + 0.2) ** 2 < 0.06 || (nx - 0.25) ** 2 + (ny - 0.35) ** 2 < 0.04;
-        return mare ? '#e6d6c0' : PALETTE.moonLit;
+        return mare ? shadeHex(PALETTE.moonLit) : PALETTE.moonLit;
       });
       ctx.globalAlpha = 1;
     }
