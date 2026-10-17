@@ -78,6 +78,12 @@ function shadeHex(hex) {
   return `#${v.map((n) => n.toString(16).padStart(2, '0')).join('')}`;
 }
 
+// Stable pseudo-random 0..1 from two numbers (same star, same value).
+function hash(a, b) {
+  const v = Math.sin(a * 127.1 + b * 311.7) * 43758.5453;
+  return v - Math.floor(v);
+}
+
 function seededNoise(seed) {
   let s = seed;
   return () => {
@@ -393,7 +399,9 @@ export default function PixelScene({ onSky, music }) {
       ctx.drawImage(skyCanvas, 0, 0);
 
       stars.forEach((s) => {
-        const tw = reduceMotion ? 1 : 1 - s.tw * (0.5 + 0.5 * Math.sin(t * 0.002 * s.sp + s.p));
+        // Two unrelated frequencies give an irregular shimmer instead of a pulse.
+        const n = 0.6 * Math.sin(t * 0.001 * s.f1 + s.p) + 0.4 * Math.sin(t * 0.001 * s.f2 + s.p * 1.7);
+        const tw = reduceMotion ? 1 : Math.max(0, 1 - s.tw * (0.5 + 0.5 * n));
         ctx.globalAlpha = s.a * tw;
         ctx.fillStyle = s.c;
         ctx.fillRect(s.x, s.y, 1, 1);
@@ -448,10 +456,13 @@ export default function PixelScene({ onSky, music }) {
           a: Math.max(0.18, Math.min(1, (limit - mag) / 1.8)) * night * fade,
           c: starColour(bv),
           big: mag < 1.3,
-          // Stars twinkle more near the horizon, through more air.
-          tw: 0.12 + 0.4 * (1 - pos.alt / SKY_TOP_ALT),
-          sp: 0.8 + ((ra * 7) % 10) / 6,
-          p: dec
+          // Scintillation: grows with the amount of air the light crosses
+          // (strong near the horizon, faint overhead). About a third of stars
+          // visibly twinkle; the rest hold nearly steady.
+          tw: (hash(ra, dec) < 0.35 ? 0.18 + 0.5 * (1 - pos.alt / SKY_TOP_ALT) ** 2 : 0.04),
+          f1: 2.1 + hash(dec, ra) * 3.2,
+          f2: 5.3 + hash(ra + 1, dec) * 4.1,
+          p: hash(dec + 2, ra) * 100
         });
       }
     }
