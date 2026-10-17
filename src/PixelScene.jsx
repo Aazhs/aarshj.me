@@ -1,5 +1,8 @@
 import { useEffect, useRef } from 'react';
-import { applyPageTheme, bloodTint, moonColour, skyPalette, skyState } from './sky';
+import {
+  applyPageTheme, bloodTint, milkyWayPoints, moonColour, skyPalette, skyState, starColour, starTransform
+} from './sky';
+import STARS from './stars.json';
 
 // Low-res canvas scaled up with image-rendering: pixelated.
 const PIXEL = 4;
@@ -83,21 +86,50 @@ function seededNoise(seed) {
   };
 }
 
-function ridge(width, base, amp, seed, freq) {
+function mixHex(a, b, t) {
+  const x = [1, 3, 5].map((i) => parseInt(a.slice(i, i + 2), 16));
+  const y = [1, 3, 5].map((i) => parseInt(b.slice(i, i + 2), 16));
+  return `#${x.map((v, i) => Math.round(v + (y[i] - v) * t).toString(16).padStart(2, '0')).join('')}`;
+}
+
+// A mountain range the way pixel-art games build them: a row of distinct peaks
+// (triangles for rocky ranges, parabolas for hills). Each column remembers which
+// peak owns it, so shading can be done per peak face instead of per pixel slope.
+function buildRange(width, cfg, seed) {
   const rand = seededNoise(seed);
-  const phases = [rand() * 10, rand() * 10, rand() * 10];
-  const out = new Array(width);
-  for (let x = 0; x < width; x += 1) {
-    const t = x / width;
-    out[x] = Math.round(
-      base -
-        amp *
-          (0.55 * Math.sin(t * freq + phases[0]) +
-            0.3 * Math.sin(t * freq * 2.3 + phases[1]) +
-            0.15 * Math.sin(t * freq * 5.1 + phases[2]))
-    );
+  const peaks = [];
+  for (let x = -cfg.spacing; x < width + cfg.spacing; x += cfg.spacing * (0.6 + rand() * 0.8)) {
+    peaks.push({
+      x: Math.round(x),
+      y: Math.round(cfg.base - (cfg.minH + rand() * (cfg.maxH - cfg.minH))),
+      left: 0.45 + rand() * 0.65,
+      right: 0.45 + rand() * 0.65
+    });
   }
-  return out;
+  const height = new Int16Array(width);
+  const owner = new Int16Array(width);
+  // Stepped jitter: changes every few pixels, so edges read as rock, not noise.
+  let jag = 0;
+  let run = 0;
+  for (let x = 0; x < width; x += 1) {
+    if (cfg.jag && run-- <= 0) {
+      jag = Math.round(rand() * 2 - 1);
+      run = 2 + Math.floor(rand() * 4);
+    }
+    let best = Infinity;
+    peaks.forEach((pk, i) => {
+      const dx = x - pk.x;
+      const y = cfg.hill
+        ? pk.y + (dx * dx) / (cfg.spacing * 0.9) * ((cfg.base - pk.y) / (cfg.spacing * 0.9))
+        : pk.y + Math.abs(dx) * (dx < 0 ? pk.left : pk.right);
+      if (y < best) {
+        best = y;
+        owner[x] = i;
+      }
+    });
+    height[x] = Math.round(best) + (cfg.jag && Math.abs(x - peaks[owner[x]].x) > 2 ? jag : 0);
+  }
+  return { height, owner, peaks, cfg };
 }
 
 function drawSprite(ctx, rows, x, y, flip) {
@@ -254,21 +286,17 @@ export default function PixelScene({ onSky, music }) {
       canvas.width = W;
       canvas.height = H;
       const pad = 24;
+      const len = W + pad * 2;
+      const u = Math.min(W, H * 1.6);
       layers = {
-        far: ridge(W + pad * 2, H * 0.62, H * 0.1, 7, 7),
-        peak: ridge(W + pad * 2, H * 0.7, H * 0.16, 31, 4),
-        mid: ridge(W + pad * 2, H * 0.78, H * 0.08, 53, 9),
-        near: ridge(W + pad * 2, H * 0.86, H * 0.05, 97, 12),
+        far: buildRange(len, { base: H * 0.68, minH: H * 0.07, maxH: H * 0.2, spacing: u * 0.24, jag: true }, 7),
+        peak: buildRange(len, { base: H * 0.78, minH: H * 0.09, maxH: H * 0.32, spacing: u * 0.36, jag: true, snow: true }, 31),
+        mid: buildRange(len, { base: H * 0.86, minH: H * 0.06, maxH: H * 0.11, spacing: u * 0.22, hill: true }, 53),
+        near: buildRange(len, { base: H * 0.93, minH: H * 0.04, maxH: H * 0.07, spacing: u * 0.17, hill: true }, 97),
         pad
       };
       bakeSky();
       const rand = seededNoise(1234);
-      stars = Array.from({ length: Math.round(W * H * 0.0016) }, () => ({
-        x: Math.floor(rand() * W),
-        y: Math.floor(rand() * H * 0.45),
-        p: rand() * Math.PI * 2,
-        s: 0.6 + rand() * 1.8
-      }));
       clouds = Array.from({ length: Math.max(3, Math.round(W / 70)) }, (_, i) => ({
         x: rand() * W,
         y: Math.round(H * (0.12 + rand() * 0.28)),
@@ -303,9 +331,12 @@ export default function PixelScene({ onSky, music }) {
       const real = ctx;
       ctx = skyCtx;
       drawBands();
+      drawMilkyWay();
       drawSun();
       drawMoon();
       ctx = real;
+      placeStars();
+      bakeMountains();
     }
 
     function drawBands() {
@@ -336,10 +367,18 @@ export default function PixelScene({ onSky, music }) {
       ctx.drawImage(skyCanvas, 0, 0);
 
       stars.forEach((s) => {
-        const a = reduceMotion ? 0.7 : 0.35 + 0.65 * Math.abs(Math.sin(t * 0.001 * s.s + s.p));
-        ctx.globalAlpha = a * night;
-        ctx.fillStyle = PALETTE.moon;
+        const tw = reduceMotion ? 1 : 1 - s.tw * (0.5 + 0.5 * Math.sin(t * 0.002 * s.sp + s.p));
+        ctx.globalAlpha = s.a * tw;
+        ctx.fillStyle = s.c;
         ctx.fillRect(s.x, s.y, 1, 1);
+        if (s.big) {
+          // The brightest stars get a small cross so they read as bright.
+          ctx.globalAlpha = s.a * tw * 0.4;
+          ctx.fillRect(s.x - 1, s.y, 1, 1);
+          ctx.fillRect(s.x + 1, s.y, 1, 1);
+          ctx.fillRect(s.x, s.y - 1, 1, 1);
+          ctx.fillRect(s.x, s.y + 1, 1, 1);
+        }
       });
       ctx.globalAlpha = 1;
 
@@ -354,11 +393,61 @@ export default function PixelScene({ onSky, music }) {
     }
 
     // Facing south from Pune: east on the left, west on the right.
-    function project(body) {
+    // Sky projection shared by sun, moon, stars, and Milky Way: azimuth maps
+    // linearly across a 240-degree view, altitude 0-82 degrees maps up the sky.
+    const SKY_TOP_ALT = 82;
+    function skyXY(body) {
       const horizon = H * 0.68;
-      const x = W * (0.5 + (body.azimuth / ((2 * Math.PI) / 3)) * 0.5);
       const alt = body.altitude / (Math.PI / 180);
-      const y = horizon - (alt / 70) * (horizon - H * 0.1);
+      const x = W * (0.5 + (body.azimuth / ((2 * Math.PI) / 3)) * 0.5);
+      return { x, y: horizon - (alt / SKY_TOP_ALT) * horizon, alt };
+    }
+
+    function placeStars() {
+      stars = [];
+      if (night <= 0.02) return;
+      const tf = starTransform(sceneDate());
+      const blood = sky.moonEvent?.kind === 'blood';
+      const glare = sky.moon.altitude > 0 && !blood ? sky.moonFraction * 1.6 : 0;
+      // Naked-eye limit: about magnitude 5 on a dark night, less with a bright moon.
+      const limit = night * 5 - glare;
+      for (const [ra, dec, mag, bv] of STARS) {
+        if (mag > limit) break;
+        const pos = skyXY(tf(ra, dec));
+        if (pos.alt < 1 || pos.alt > SKY_TOP_ALT || pos.x < 0 || pos.x >= W) continue;
+        const fade = Math.min(1, pos.alt / 10);
+        stars.push({
+          x: Math.round(pos.x),
+          y: Math.round(pos.y),
+          a: Math.max(0.18, Math.min(1, (limit - mag) / 1.8)) * night * fade,
+          c: starColour(bv),
+          big: mag < 1.3,
+          // Stars twinkle more near the horizon, through more air.
+          tw: 0.12 + 0.4 * (1 - pos.alt / SKY_TOP_ALT),
+          sp: 0.8 + ((ra * 7) % 10) / 6,
+          p: dec
+        });
+      }
+    }
+
+    function drawMilkyWay() {
+      const blood = sky.moonEvent?.kind === 'blood';
+      const moonWash = sky.moon.altitude > 0 && !blood ? sky.moonFraction * 0.9 : 0;
+      const strength = night ** 2 * (1 - moonWash);
+      if (strength < 0.05) return;
+      const tf = starTransform(sceneDate());
+      ctx.fillStyle = '#d9d2ff';
+      for (const [ra, dec, core] of milkyWayPoints()) {
+        const pos = skyXY(tf(ra, dec));
+        if (pos.alt < 2 || pos.x < 0 || pos.x >= W || pos.y < 0) continue;
+        ctx.globalAlpha = (0.05 + 0.1 * core) * strength * Math.min(1, pos.alt / 15);
+        ctx.fillRect(Math.round(pos.x), Math.round(pos.y), 1, 1);
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    function project(body) {
+      const { x, y } = skyXY(body);
       return { x: Math.round(x), y: Math.round(Math.max(H * 0.06, y)) };
     }
 
@@ -417,21 +506,70 @@ export default function PixelScene({ onSky, music }) {
       ctx.globalAlpha = 1;
     }
 
-    function drawRidge(heights, color, depth, shade) {
-      const offset = Math.round(layers.pad + cam.x * depth * -layers.pad);
-      ctx.fillStyle = color;
-      for (let x = 0; x < W; x += 1) {
-        const h = heights[x + offset];
-        ctx.fillRect(x, h, 1, H - h);
+    const layerCanvases = {};
+    let lightFromLeft = true;
+
+    // Draw one range into its own canvas: body, one shadow face per peak on the
+    // side away from the light (a stair-stepped diagonal, like hand-made pixel
+    // art), a lit rim, and snow caps on the tall range.
+    function bakeRange(name, color, shade) {
+      const range = layers[name];
+      const width = range.height.length;
+      const c = layerCanvases[name] || (layerCanvases[name] = document.createElement('canvas'));
+      c.width = width;
+      c.height = H;
+      const g = c.getContext('2d');
+      g.fillStyle = color;
+      for (let x = 0; x < width; x += 1) g.fillRect(x, range.height[x], 1, H - range.height[x]);
+
+      const spine = range.cfg.hill ? 1.4 : 1.8;
+      // Distance to the nearest valley (where the owning peak changes), so the
+      // lit face narrows into the valley instead of ending in a vertical wall.
+      const seam = new Int16Array(width).fill(9999);
+      for (let x = 1; x < width; x += 1) seam[x] = range.owner[x] !== range.owner[x - 1] ? 0 : seam[x - 1] + 1;
+      for (let x = width - 2; x >= 0; x -= 1) seam[x] = Math.min(seam[x], range.owner[x] !== range.owner[x + 1] ? 0 : seam[x + 1] + 1);
+      g.fillStyle = shade;
+      for (let x = 0; x < width; x += 1) {
+        const pk = range.peaks[range.owner[x]];
+        const toLight = lightFromLeft ? pk.x - x : x - pk.x;
+        const top = range.height[x];
+        // Far side of the peak: fully in shadow. Lit side: shadow only creeps in
+        // low down, which slants the boundary like a ridge spine.
+        let start = toLight <= 0 ? top : Math.max(top, Math.round(pk.y + toLight * spine));
+        if (toLight > 0) start = Math.min(start, top + Math.round(seam[x] * 2.2));
+        if (start < H) g.fillRect(x, start, 1, H - start);
       }
-      if (shade) {
-        // Shade the slopes that face away from the moon.
-        ctx.fillStyle = shade;
-        for (let x = 3; x < W; x += 1) {
-          const h = heights[x + offset];
-          if (h > heights[x + offset - 3]) ctx.fillRect(x, h + 1, 1, H - h);
+
+      g.fillStyle = PALETTE.rim;
+      for (let x = 1; x < width - 1; x += 1) {
+        const pk = range.peaks[range.owner[x]];
+        const lit = lightFromLeft ? x <= pk.x : x >= pk.x;
+        const top = range.height[x];
+        if (range.cfg.snow && top - pk.y < 4 && pk.y < range.cfg.base - range.cfg.minH * 1.3) {
+          g.globalAlpha = lit ? 0.75 : 0.35;
+          g.fillRect(x, top, 1, Math.max(1, 3 - (top - pk.y) + 1));
+        } else if (lit && !range.cfg.hill) {
+          g.globalAlpha = 0.22;
+          g.fillRect(x, top, 1, 1);
         }
       }
+      g.globalAlpha = 1;
+    }
+
+    function bakeMountains() {
+      if (!layers || !sky) return;
+      // Light comes from the sun if it is up, otherwise the moon.
+      const source = sky.sun.altitude > 0 ? sky.sun : sky.moon.altitude > 0 ? sky.moon : null;
+      lightFromLeft = source ? project(source).x < W / 2 : true;
+      bakeRange('far', PALETTE.far, mixHex(PALETTE.far, PALETTE.mid, 0.3));
+      bakeRange('peak', PALETTE.peak, PALETTE.peakShade);
+      bakeRange('mid', PALETTE.mid, mixHex(PALETTE.mid, PALETTE.ground, 0.3));
+      bakeRange('near', PALETTE.near, mixHex(PALETTE.near, PALETTE.ground, 0.35));
+    }
+
+    function drawRange(name, depth) {
+      const offset = Math.round(layers.pad + cam.x * depth * -layers.pad);
+      ctx.drawImage(layerCanvases[name], -offset, 0);
     }
 
     function drawGround() {
@@ -646,10 +784,10 @@ export default function PixelScene({ onSky, music }) {
 
       drawSky(t);
       clouds.forEach((c) => drawCloud(ctx, Math.round(c.x), c.y, c.w));
-      drawRidge(layers.far, PALETTE.far, 0.2);
-      drawRidge(layers.peak, PALETTE.peak, 0.4, PALETTE.peakShade);
-      drawRidge(layers.mid, PALETTE.mid, 0.7);
-      drawRidge(layers.near, PALETTE.near, 1);
+      drawRange('far', 0.2);
+      drawRange('peak', 0.4);
+      drawRange('mid', 0.7);
+      drawRange('near', 1);
       drawGround();
       drawPlayer();
       drawNotes();

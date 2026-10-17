@@ -712,8 +712,8 @@ function App() {
               <span>Joshi</span>
             </h1>
             <p className="lede">
-              CS student at MITAOE, Pune. I build polished web experiences and practical
-              dev tools, train ML models that run on-device, and I&apos;m leveling up Go and C++.
+              I build web apps and developer tools, and train vision models small enough
+              to run on a phone. Computer science student.
             </p>
             <div className="cta-row">
               <a className="btn btn-primary" href="https://github.com/Aazhs" target="_blank" rel="noreferrer">

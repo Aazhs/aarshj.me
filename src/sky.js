@@ -259,3 +259,63 @@ function mixHex(a, b, t) {
   const y = hexToRgb(b);
   return rgbToHex(x.map((v, i) => v + (y[i] - v) * Math.max(0, Math.min(1, t))));
 }
+
+// ---- Stars and Milky Way -------------------------------------------------
+
+// Horizontal position (azimuth from south, altitude) of a fixed point in the
+// sky given its right ascension and declination in degrees.
+export function starTransform(date, { lat, lng } = PUNE) {
+  const d = toDays(date);
+  const lst = siderealTime(d, RAD * -lng);
+  const phi = RAD * lat;
+  return (raDeg, decDeg) => {
+    const dec = RAD * decDeg;
+    const H = lst - RAD * raDeg;
+    return { azimuth: azimuth(H, phi, dec), altitude: altitude(H, phi, dec) };
+  };
+}
+
+// Milky Way as a cloud of faint points along the real galactic plane:
+// densest towards the core in Sagittarius, with the dark Great Rift.
+let milkyWayCache = null;
+export function milkyWayPoints() {
+  if (milkyWayCache) return milkyWayCache;
+  let seed = 4242;
+  const rand = () => {
+    seed = (seed * 16807) % 2147483647;
+    return (seed - 1) / 2147483646;
+  };
+  const gauss = () => Math.sqrt(-2 * Math.log(rand() + 1e-9)) * Math.cos(2 * Math.PI * rand());
+  const raG = RAD * 192.85948;
+  const decG = RAD * 27.12825;
+  const lNcp = RAD * 122.93192;
+  const pts = [];
+  while (pts.length < 5000) {
+    const lDeg = rand() * 360;
+    // Brighter and wider towards the galactic centre (l = 0).
+    const core = Math.cos((RAD * lDeg) / 2) ** 2;
+    if (rand() > 0.35 + 0.65 * core) continue;
+    const bDeg = gauss() * (4 + 7 * core);
+    // Great Rift: dust lane along the plane between Cygnus and Sagittarius.
+    if ((lDeg < 60 || lDeg > 330) && Math.abs(bDeg - 0.8) < 1.6 && rand() < 0.8) continue;
+    const l = RAD * lDeg;
+    const b = RAD * bDeg;
+    const dec = Math.asin(Math.sin(b) * Math.sin(decG) + Math.cos(b) * Math.cos(decG) * Math.cos(lNcp - l));
+    const ra = raG + Math.atan2(
+      Math.cos(b) * Math.sin(lNcp - l),
+      Math.sin(b) * Math.cos(decG) - Math.cos(b) * Math.sin(decG) * Math.cos(lNcp - l)
+    );
+    pts.push([((ra / RAD) % 360 + 360) % 360, dec / RAD, core]);
+  }
+  milkyWayCache = pts;
+  return pts;
+}
+
+// Star colour from its B-V colour index: hot blue-white to cool orange.
+export function starColour(bv) {
+  if (bv < 0) return '#b8d0ff';
+  if (bv < 0.3) return '#e2e9ff';
+  if (bv < 0.6) return '#fff6e3';
+  if (bv < 1.0) return '#ffe1b0';
+  return '#ffc48e';
+}
