@@ -92,44 +92,53 @@ function mixHex(a, b, t) {
   return `#${x.map((v, i) => Math.round(v + (y[i] - v) * t).toString(16).padStart(2, '0')).join('')}`;
 }
 
-// A mountain range the way pixel-art games build them: a row of distinct peaks
-// (triangles for rocky ranges, parabolas for hills). Each column remembers which
-// peak owns it, so shading can be done per peak face instead of per pixel slope.
+// Natural ridgeline: layered smooth value noise (fBm), stretched to a set
+// height range. `sharp` > 1 keeps valleys low and lets a few peaks rise.
 function buildRange(width, cfg, seed) {
   const rand = seededNoise(seed);
-  const peaks = [];
-  for (let x = -cfg.spacing; x < width + cfg.spacing; x += cfg.spacing * (0.6 + rand() * 0.8)) {
-    peaks.push({
-      x: Math.round(x),
-      y: Math.round(cfg.base - (cfg.minH + rand() * (cfg.maxH - cfg.minH))),
-      left: 0.45 + rand() * 0.65,
-      right: 0.45 + rand() * 0.65
-    });
-  }
-  const height = new Int16Array(width);
-  const owner = new Int16Array(width);
-  // Stepped jitter: changes every few pixels, so edges read as rock, not noise.
-  let jag = 0;
-  let run = 0;
+  const lattice = Array.from({ length: 4096 }, () => rand());
+  const noise = (x) => {
+    const i = Math.floor(x);
+    const t = (1 - Math.cos((x - i) * Math.PI)) / 2;
+    return lattice[i & 4095] * (1 - t) + lattice[(i + 1) & 4095] * t;
+  };
+  const offset = rand() * 1000;
+  const vals = new Float32Array(width);
   for (let x = 0; x < width; x += 1) {
-    if (cfg.jag && run-- <= 0) {
-      jag = Math.round(rand() * 2 - 1);
-      run = 2 + Math.floor(rand() * 4);
+    let v = 0;
+    let amp = 1;
+    let freq = 1 / cfg.scale;
+    let total = 0;
+    for (let o = 0; o < 4; o += 1) {
+      v += amp * noise((x + offset) * freq);
+      total += amp;
+      amp *= cfg.rough;
+      freq *= 2.03;
     }
-    let best = Infinity;
-    peaks.forEach((pk, i) => {
-      const dx = x - pk.x;
-      const y = cfg.hill
-        ? pk.y + (dx * dx) / (cfg.spacing * 0.9) * ((cfg.base - pk.y) / (cfg.spacing * 0.9))
-        : pk.y + Math.abs(dx) * (dx < 0 ? pk.left : pk.right);
-      if (y < best) {
-        best = y;
-        owner[x] = i;
-      }
-    });
-    height[x] = Math.round(best) + (cfg.jag && Math.abs(x - peaks[owner[x]].x) > 2 ? jag : 0);
+    vals[x] = v / total;
   }
-  return { height, owner, peaks, cfg };
+  let lo = Infinity;
+  let hi = -Infinity;
+  vals.forEach((v) => {
+    lo = Math.min(lo, v);
+    hi = Math.max(hi, v);
+  });
+  const height = new Int16Array(width);
+  for (let x = 0; x < width; x += 1) {
+    height[x] = Math.round(cfg.base - cfg.amp * ((vals[x] - lo) / (hi - lo || 1)) ** cfg.sharp);
+  }
+  // Smoothed copy for shading, so small bumps don't flicker light and dark.
+  const smooth = new Float32Array(width);
+  for (let x = 0; x < width; x += 1) {
+    let sum = 0;
+    let n = 0;
+    for (let k = Math.max(0, x - 6); k <= Math.min(width - 1, x + 6); k += 1) {
+      sum += height[k];
+      n += 1;
+    }
+    smooth[x] = sum / n;
+  }
+  return { height, smooth, cfg };
 }
 
 function drawSprite(ctx, rows, x, y, flip) {
@@ -270,6 +279,8 @@ export default function PixelScene({ onSky, music }) {
     const pointer = { x: 0.5, y: 0.4, active: false };
     // Eased pointer so the parallax glides instead of snapping.
     const cam = { x: 0 };
+    // New mountains on every visit; stable across resizes within one visit.
+    const rangeSeed = 1 + Math.floor(Math.random() * 1e6);
     // Music: beat clock, floating notes, and a 0..1 blend so changes ease in.
     const beat = { index: -1, pulse: 0, smooth: 0, mix: 0 };
     let notes = [];
@@ -287,12 +298,11 @@ export default function PixelScene({ onSky, music }) {
       canvas.height = H;
       const pad = 24;
       const len = W + pad * 2;
-      const u = Math.min(W, H * 1.6);
       layers = {
-        far: buildRange(len, { base: H * 0.68, minH: H * 0.07, maxH: H * 0.2, spacing: u * 0.24, jag: true }, 7),
-        peak: buildRange(len, { base: H * 0.78, minH: H * 0.09, maxH: H * 0.32, spacing: u * 0.36, jag: true, snow: true }, 31),
-        mid: buildRange(len, { base: H * 0.86, minH: H * 0.06, maxH: H * 0.11, spacing: u * 0.22, hill: true }, 53),
-        near: buildRange(len, { base: H * 0.93, minH: H * 0.04, maxH: H * 0.07, spacing: u * 0.17, hill: true }, 97),
+        far: buildRange(len, { base: H * 0.68, amp: H * 0.16, scale: 70, rough: 0.45, sharp: 1.2 }, rangeSeed),
+        peak: buildRange(len, { base: H * 0.76, amp: H * 0.22, scale: 110, rough: 0.42, sharp: 1.8, rim: true }, rangeSeed + 1),
+        mid: buildRange(len, { base: H * 0.84, amp: H * 0.1, scale: 90, rough: 0.4, sharp: 1.1 }, rangeSeed + 2),
+        near: buildRange(len, { base: H * 0.91, amp: H * 0.06, scale: 70, rough: 0.4, sharp: 1 }, rangeSeed + 3),
         pad
       };
       bakeSky();
@@ -339,28 +349,44 @@ export default function PixelScene({ onSky, music }) {
       bakeMountains();
     }
 
+    // Pixel-art sky gradient: blend the palette stops into many small steps,
+    // then pick between neighbouring steps with a 4x4 Bayer pattern, so the
+    // sky reads as smooth while staying crisp pixels.
+    const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5].map((v) => (v + 0.5) / 16);
     function drawBands() {
-      const bands = [
+      const stops = [
         [0, PALETTE.skyTop],
-        [0.22, PALETTE.sky],
-        [0.5, PALETTE.skyLow],
-        [0.66, PALETTE.haze]
-      ];
-      bands.forEach(([start, color], i) => {
-        const y0 = Math.floor(start * H);
-        const y1 = i < bands.length - 1 ? Math.floor(bands[i + 1][0] * H) : H;
-        ctx.fillStyle = color;
-        ctx.fillRect(0, y0, W, y1 - y0);
-        // Ordered dither at each band edge, like the hero art.
-        if (i > 0) {
-          ctx.fillStyle = bands[i - 1][1];
-          for (let y = y0; y < y0 + 4; y += 1) {
-            for (let x = (y % 2) + ((y - y0) % 2) * 2; x < W; x += 2 + (y - y0)) {
-              ctx.fillRect(x, y, 1, 1);
-            }
-          }
+        [0.38, PALETTE.sky],
+        [0.6, PALETTE.skyLow],
+        [0.74, PALETTE.haze],
+        [1, PALETTE.haze]
+      ].map(([at, hex]) => [at, [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16))]);
+      const colourAt = (t) => {
+        let i = 0;
+        while (i < stops.length - 2 && t > stops[i + 1][0]) i += 1;
+        const [a0, c0] = stops[i];
+        const [a1, c1] = stops[i + 1];
+        const k = Math.max(0, Math.min(1, (t - a0) / (a1 - a0)));
+        return c0.map((v, j) => v + (c1[j] - v) * k);
+      };
+      const STEPS = 18;
+      const levels = Array.from({ length: STEPS + 1 }, (_, i) => colourAt(i / STEPS));
+      const img = ctx.createImageData(W, H);
+      for (let y = 0; y < H; y += 1) {
+        const pos = (y / H) * STEPS;
+        const lo = Math.min(STEPS, Math.floor(pos));
+        const hi = Math.min(STEPS, lo + 1);
+        const frac = pos - lo;
+        for (let x = 0; x < W; x += 1) {
+          const c = frac > BAYER[(y & 3) * 4 + (x & 3)] ? levels[hi] : levels[lo];
+          const o = (y * W + x) * 4;
+          img.data[o] = c[0];
+          img.data[o + 1] = c[1];
+          img.data[o + 2] = c[2];
+          img.data[o + 3] = 255;
         }
-      });
+      }
+      ctx.putImageData(img, 0, 0);
     }
 
     function drawSky(t) {
@@ -509,10 +535,10 @@ export default function PixelScene({ onSky, music }) {
     const layerCanvases = {};
     let lightFromLeft = true;
 
-    // Draw one range into its own canvas: body, one shadow face per peak on the
-    // side away from the light (a stair-stepped diagonal, like hand-made pixel
-    // art), a lit rim, and snow caps on the tall range.
-    function bakeRange(name, color, shade) {
+    // Draw one range into its own canvas: solid body, a soft dithered shadow
+    // band under the ridge on slopes facing away from the light, and a faint
+    // lit rim on slopes facing it.
+    function bakeRange(name, color, shade, depth) {
       const range = layers[name];
       const width = range.height.length;
       const c = layerCanvases[name] || (layerCanvases[name] = document.createElement('canvas'));
@@ -521,39 +547,24 @@ export default function PixelScene({ onSky, music }) {
       const g = c.getContext('2d');
       g.fillStyle = color;
       for (let x = 0; x < width; x += 1) g.fillRect(x, range.height[x], 1, H - range.height[x]);
-
-      const spine = range.cfg.hill ? 1.4 : 1.8;
-      // Distance to the nearest valley (where the owning peak changes), so the
-      // lit face narrows into the valley instead of ending in a vertical wall.
-      const seam = new Int16Array(width).fill(9999);
-      for (let x = 1; x < width; x += 1) seam[x] = range.owner[x] !== range.owner[x - 1] ? 0 : seam[x - 1] + 1;
-      for (let x = width - 2; x >= 0; x -= 1) seam[x] = Math.min(seam[x], range.owner[x] !== range.owner[x + 1] ? 0 : seam[x + 1] + 1);
-      g.fillStyle = shade;
+      const dir = lightFromLeft ? 1 : -1;
       for (let x = 0; x < width; x += 1) {
-        const pk = range.peaks[range.owner[x]];
-        const toLight = lightFromLeft ? pk.x - x : x - pk.x;
         const top = range.height[x];
-        // Far side of the peak: fully in shadow. Lit side: shadow only creeps in
-        // low down, which slants the boundary like a ridge spine.
-        let start = toLight <= 0 ? top : Math.max(top, Math.round(pk.y + toLight * spine));
-        if (toLight > 0) start = Math.min(start, top + Math.round(seam[x] * 2.2));
-        if (start < H) g.fillRect(x, start, 1, H - start);
-      }
-
-      g.fillStyle = PALETTE.rim;
-      for (let x = 1; x < width - 1; x += 1) {
-        const pk = range.peaks[range.owner[x]];
-        const lit = lightFromLeft ? x <= pk.x : x >= pk.x;
-        const top = range.height[x];
-        if (range.cfg.snow && top - pk.y < 4 && pk.y < range.cfg.base - range.cfg.minH * 1.3) {
-          g.globalAlpha = lit ? 0.75 : 0.35;
-          g.fillRect(x, top, 1, Math.max(1, 3 - (top - pk.y) + 1));
-        } else if (lit && !range.cfg.hill) {
-          g.globalAlpha = 0.22;
+        const slope = ((range.smooth[Math.min(width - 1, x + 3)] - range.smooth[Math.max(0, x - 3)]) / 6) * dir;
+        if (slope > 0.05) {
+          const d = Math.min(depth, Math.round(depth * Math.min(1, slope * 2.2)));
+          g.fillStyle = shade;
+          for (let k = 0; k < d; k += 1) {
+            if (k > d * 0.6 && (x + top + k) % 2) continue;
+            g.fillRect(x, top + k, 1, 1);
+          }
+        } else if (range.cfg.rim && slope < -0.05) {
+          g.globalAlpha = 0.25;
+          g.fillStyle = PALETTE.rim;
           g.fillRect(x, top, 1, 1);
+          g.globalAlpha = 1;
         }
       }
-      g.globalAlpha = 1;
     }
 
     function bakeMountains() {
@@ -561,10 +572,10 @@ export default function PixelScene({ onSky, music }) {
       // Light comes from the sun if it is up, otherwise the moon.
       const source = sky.sun.altitude > 0 ? sky.sun : sky.moon.altitude > 0 ? sky.moon : null;
       lightFromLeft = source ? project(source).x < W / 2 : true;
-      bakeRange('far', PALETTE.far, mixHex(PALETTE.far, PALETTE.mid, 0.3));
-      bakeRange('peak', PALETTE.peak, PALETTE.peakShade);
-      bakeRange('mid', PALETTE.mid, mixHex(PALETTE.mid, PALETTE.ground, 0.3));
-      bakeRange('near', PALETTE.near, mixHex(PALETTE.near, PALETTE.ground, 0.35));
+      bakeRange('far', PALETTE.far, mixHex(PALETTE.far, PALETTE.mid, 0.25), 6);
+      bakeRange('peak', PALETTE.peak, PALETTE.peakShade, 12);
+      bakeRange('mid', PALETTE.mid, mixHex(PALETTE.mid, PALETTE.ground, 0.3), 8);
+      bakeRange('near', PALETTE.near, mixHex(PALETTE.near, PALETTE.ground, 0.35), 6);
     }
 
     function drawRange(name, depth) {
