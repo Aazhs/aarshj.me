@@ -299,10 +299,10 @@ export default function PixelScene({ onSky, music }) {
       const pad = 24;
       const len = W + pad * 2;
       layers = {
-        far: buildRange(len, { base: H * 0.68, amp: H * 0.16, scale: 70, rough: 0.45, sharp: 1.2 }, rangeSeed),
-        peak: buildRange(len, { base: H * 0.76, amp: H * 0.22, scale: 110, rough: 0.42, sharp: 1.8, rim: true }, rangeSeed + 1),
-        mid: buildRange(len, { base: H * 0.84, amp: H * 0.1, scale: 90, rough: 0.4, sharp: 1.1 }, rangeSeed + 2),
-        near: buildRange(len, { base: H * 0.91, amp: H * 0.06, scale: 70, rough: 0.4, sharp: 1 }, rangeSeed + 3),
+        far: buildRange(len, { base: H * 0.7, amp: H * 0.1, scale: 70, rough: 0.45, sharp: 1.2 }, rangeSeed),
+        peak: buildRange(len, { base: H * 0.77, amp: H * 0.13, scale: 110, rough: 0.42, sharp: 1.5, rim: true }, rangeSeed + 1),
+        mid: buildRange(len, { base: H * 0.85, amp: H * 0.07, scale: 90, rough: 0.4, sharp: 1.1 }, rangeSeed + 2),
+        near: buildRange(len, { base: H * 0.91, amp: H * 0.045, scale: 70, rough: 0.4, sharp: 1 }, rangeSeed + 3),
         pad
       };
       bakeSky();
