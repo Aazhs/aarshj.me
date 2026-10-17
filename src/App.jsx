@@ -360,7 +360,7 @@ const DIALOGUE = [
   'Hey, I’m Aarsh. I study Computer Science at MIT Academy of Engineering, Pune.',
   'Most days I’m on React architecture, UI systems, and keeping my DSA streak alive.',
   'I like shipping real products: a live lab IDE for professors, a solar planner, and kiosks and apps for SIH 2026.',
-  'Lately I’ve been deep in AI and ML: training vision models, exporting them to ONNX, and running them on a phone.',
+  'Lately I’ve been deep in AI and ML: training models and exporting them to ONNX so they run anywhere.',
   'Right now I’m learning Go and Node.js for backend work.',
   'I live in Linux, write shell scripts for everything, and automate what I can.',
   'I also like going low-level: ARM64 assembly, C that drives the Mac trackpad’s haptics, and OpenGL graphics algorithms.'
@@ -712,8 +712,8 @@ function App() {
               <span>Joshi</span>
             </h1>
             <p className="lede">
-              I build web apps and developer tools, and train vision models small enough
-              to run on a phone. Computer science student.
+              I build web apps and developer tools, and train ML models.
+              Computer science student.
             </p>
             <div className="cta-row">
               <a className="btn btn-primary" href="https://github.com/Aazhs" target="_blank" rel="noreferrer">
