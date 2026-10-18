@@ -751,10 +751,6 @@ function App() {
               <span>Aarsh</span>
               <span>Joshi</span>
             </h1>
-            <p className="lede">
-              I build web apps and developer tools, and train ML models.
-              Computer science student.
-            </p>
             <div className="cta-row">
               <a className="btn btn-primary" href="https://github.com/Aazhs" target="_blank" rel="noreferrer">
                 View GitHub
