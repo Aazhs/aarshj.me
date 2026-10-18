@@ -240,6 +240,7 @@ export default function PixelScene({ onSky, music, weather }) {
     // Meteors (several at once during showers), constellations, the ISS.
     let shower = null;
     let meteorRate = 0.3;
+    let meteorPreview = false;
     let radiant = null;
     let meteors = [];
     let constProj = [];
@@ -253,6 +254,8 @@ export default function PixelScene({ onSky, music, weather }) {
     let waveUntil = 0;
     // 2-4 am IST: the trapped copy of Aarsh asks for help.
     let horror = false;
+    // Even between 2 and 4 am it only happens on about 1 visit in 50.
+    const horrorRoll = Math.random() < 1 / 50;
     let whisperAt = 0;
     let whisperIndex = 0;
     let glitchUntil = 0;
@@ -304,7 +307,7 @@ export default function PixelScene({ onSky, music, weather }) {
       // Late-night horror mode (IST, follows the preview time too).
       const istHour = new Date(sceneDate().getTime() + 5.5 * 3600000).getUTCHours();
       const wasHorror = horror;
-      horror = getPreview().horror === 'on' || (istHour >= 2 && istHour < 4);
+      horror = getPreview().horror === 'on' || (horrorRoll && istHour >= 2 && istHour < 4);
       if (horror && !wasHorror) {
         whisperIndex = 0;
         whisperAt = performance.now() + 2500;
@@ -325,7 +328,9 @@ export default function PixelScene({ onSky, music, weather }) {
       }
       const pv = getPreview();
       shower = pv.meteors ? showerByKey(pv.meteors) : activeShower(sceneDate());
-      meteorRate = meteorsPerMinute(shower);
+      // Previews show a busy shower so it's easy to see; live peaks stay realistic.
+      meteorRate = pv.meteors ? 30 : meteorsPerMinute(shower);
+      meteorPreview = Boolean(pv.meteors);
       sky.shower = shower && shower.strength > 0.25 ? shower : null;
       sky.issUp = iss.up;
       bakeSky();
@@ -884,7 +889,8 @@ export default function PixelScene({ onSky, music, weather }) {
     // Meteors: random sporadics, plus shower meteors that streak away from the
     // shower's radiant (the point in the sky they all seem to come from).
     function updateMeteors(dt) {
-      if (night > 0.5 && overcast < 0.6 && meteors.length < 6 && Math.random() < (meteorRate / 60) * dt) {
+      const dark = night > 0.5 || meteorPreview;
+      if (dark && overcast < 0.6 && meteors.length < 8 && Math.random() < (meteorRate / 60) * dt) {
         const x = Math.random() * W;
         const y = H * (0.05 + Math.random() * 0.4);
         let dx = Math.random() < 0.5 ? 1 : -1;
@@ -895,7 +901,10 @@ export default function PixelScene({ onSky, music, weather }) {
         }
         const len = Math.hypot(dx, dy) || 1;
         const speed = 110 + Math.random() * 60;
-        meteors.push({ x, y, vx: (dx / len) * speed, vy: (dy / len) * speed, life: 0.5 + Math.random() * 0.4, max: 0 });
+        const bright = Math.random() < 0.3;
+        meteors.push({
+          x, y, vx: (dx / len) * speed, vy: (dy / len) * speed, life: 0.6 + Math.random() * 0.5, max: 0, bright
+        });
         meteors.at(-1).max = meteors.at(-1).life;
       }
       meteors.forEach((m) => {
@@ -908,12 +917,20 @@ export default function PixelScene({ onSky, music, weather }) {
 
     function drawMeteors() {
       ctx.fillStyle = PALETTE.moon;
+      const vis = Math.max(night, 0.45);
       meteors.forEach((m) => {
-        const fade = Math.min(1, m.life / (m.max * 0.4));
+        const fade = Math.min(1, m.life / (m.max * 0.4)) * vis;
         const sp = Math.hypot(m.vx, m.vy);
-        for (let i = 0; i < 9; i += 1) {
-          ctx.globalAlpha = (1 - i / 9) * fade;
+        const trail = m.bright ? 16 : 11;
+        for (let i = 0; i < trail; i += 1) {
+          ctx.globalAlpha = (1 - i / trail) * fade;
           ctx.fillRect(Math.round(m.x - (m.vx / sp) * i * 1.4), Math.round(m.y - (m.vy / sp) * i * 1.4), 1, 1);
+        }
+        if (m.bright) {
+          // A brighter head for the occasional fireball.
+          ctx.globalAlpha = fade * 0.5;
+          ctx.fillRect(Math.round(m.x) - 1, Math.round(m.y), 1, 1);
+          ctx.fillRect(Math.round(m.x), Math.round(m.y) - 1, 1, 1);
         }
       });
       ctx.globalAlpha = 1;
@@ -1578,8 +1595,8 @@ export default function PixelScene({ onSky, music, weather }) {
           best = target;
         }
       });
-      // Otherwise, the constellation whose centre is nearest the pointer.
-      if (!best && pointer.active && night > 0.3 && overcast < 0.85) {
+      // Holding Shift: the constellation whose centre is nearest the pointer.
+      if (!best && shiftHeld && pointer.active && night > 0.3 && overcast < 0.85) {
         let near = null;
         let nearD = 14;
         constProj.forEach((cp) => {
@@ -1592,13 +1609,13 @@ export default function PixelScene({ onSky, music, weather }) {
         });
         if (near) best = { x: Math.round(near.label.x), y: Math.round(near.label.y), name: near.c.name, kind: 'Constellation', con: near.c };
       }
-      hoverConst = best?.con ?? null;
+      hoverConst = shiftHeld ? best?.con ?? null : null;
       if (!best || !pointer.active) {
         tip.hidden = true;
         return;
       }
       tip.firstChild.textContent = best.name;
-      tip.lastChild.textContent = best.kind;
+      tip.lastChild.textContent = !shiftHeld && best.kind.startsWith('Star in') ? 'Star' : best.kind;
       tip.style.left = `${best.x * PIXEL + 12}px`;
       tip.style.top = `${best.y * PIXEL - 10}px`;
       tip.hidden = false;
@@ -1668,7 +1685,10 @@ export default function PixelScene({ onSky, music, weather }) {
       ({ ArrowLeft: 'left', a: 'left', A: 'left', ArrowRight: 'right', d: 'right', D: 'right' })[e.key];
     const typing = (e) => e.target.closest?.('input, textarea, select, [contenteditable]');
     const onKeyDown = (e) => {
-      if (e.key === 'Shift') shiftHeld = true;
+      if (e.key === 'Shift' && !shiftHeld) {
+        shiftHeld = true;
+        showTip();
+      }
       if (!visible || typing(e)) return;
       const key = e.key.length === 1 ? e.key.toLowerCase() : e.key;
       konami = key === KONAMI[konami] ? konami + 1 : key === KONAMI[0] ? 1 : 0;
@@ -1704,7 +1724,10 @@ export default function PixelScene({ onSky, music, weather }) {
       }
     };
     const onKeyUp = (e) => {
-      if (e.key === 'Shift') shiftHeld = false;
+      if (e.key === 'Shift') {
+        shiftHeld = false;
+        showTip();
+      }
       const k = keyName(e);
       if (k) keys.delete(k);
     };

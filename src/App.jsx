@@ -768,7 +768,15 @@ function App() {
             </div>
           </div>
           <p className="hero-hint" aria-hidden="true">
-            <span className="hint-keys"><kbd>←</kbd><kbd>→</kbd> walk <kbd>↑</kbd> jump, or click the ground</span>
+            <span className="hint-keys">
+              <kbd>←</kbd><kbd>→</kbd> walk <kbd>↑</kbd> jump, or click the ground
+              {sky && sky.sunAltDeg < -6 ? (
+                <>
+                  <br />
+                  hold <kbd>Shift</kbd> for constellations
+                </>
+              ) : null}
+            </span>
             <span className="hint-touch">Tap the ground to move</span>
           </p>
         </section>
