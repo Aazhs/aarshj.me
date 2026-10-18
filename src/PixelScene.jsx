@@ -4,7 +4,7 @@ import {
   weatherTint
 } from './sky';
 import { NAMED_STARS, planetPositions } from './planets';
-import { benchSeat, drawProps, layoutProps, UMBRELLA, UMBRELLA_COLOURS } from './props';
+import { benchSeat, drawProps, layoutProps, makeLighting, UMBRELLA, UMBRELLA_COLOURS } from './props';
 import STARS from './stars.json';
 
 // Low-res canvas scaled up with image-rendering: pixelated.
@@ -164,12 +164,13 @@ function buildRange(width, cfg, seed) {
   return { height, smooth, cfg };
 }
 
-function drawSprite(ctx, rows, x, y, flip) {
+// colourAt(hex, x, y) lights each pixel for the scene; without it, flat colours.
+function drawSprite(ctx, rows, x, y, flip, colourAt) {
   rows.forEach((row, ry) => {
     for (let rx = 0; rx < row.length; rx += 1) {
       const c = row[flip ? row.length - 1 - rx : rx];
       if (c === '.') continue;
-      ctx.fillStyle = SPRITE_COLORS[c];
+      ctx.fillStyle = colourAt ? colourAt(SPRITE_COLORS[c], x + rx, y + ry) : SPRITE_COLORS[c];
       ctx.fillRect(x + rx, y + ry, 1, 1);
     }
   });
@@ -231,6 +232,7 @@ export default function PixelScene({ onSky, music, weather }) {
     let splashes = [];
     let bolt = null;
     let cloudBucket = -1;
+    let playerLight = null;
     let nextBolt = 0;
 
     function updateSky() {
@@ -433,7 +435,7 @@ export default function PixelScene({ onSky, music, weather }) {
         if (grassEdge[x]) g.fillRect(x, gy - grassEdge[x], 1, grassEdge[x]);
       }
       const golden = Math.max(0, 1 - Math.abs(sky.sunAltDeg - 3) / 8) * (1 - overcast * 0.7);
-      drawProps(g, propItems, gy, {
+      const light = {
         night,
         overcast,
         dim: Math.max(0, Math.min(1, (8 - sky.sunAltDeg) / 20)),
@@ -441,7 +443,11 @@ export default function PixelScene({ onSky, music, weather }) {
         wet,
         ambient: PALETTE.near,
         lampColour: '#ffd98a'
-      });
+      };
+      drawProps(g, propItems, gy, light);
+      // The character uses the same light, a little brighter so it stays readable.
+      const { colourAt } = makeLighting(propItems, gy, light);
+      playerLight = (hex, x, y) => colourAt(hex, x, y, 0.75);
     }
 
     // Fog: a dithered band that thickens towards the ground.
@@ -1010,12 +1016,15 @@ export default function PixelScene({ onSky, music, weather }) {
       }
       const px = Math.round(player.x);
       const py = Math.round(player.y) + bob;
-      drawSprite(ctx, rows, px, py, player.facing < 0);
+      drawSprite(ctx, rows, px, py, player.facing < 0, playerLight);
       if (wet > 0) {
         UMBRELLA.forEach((row, ry) => {
           for (let rx = 0; rx < row.length; rx += 1) {
             if (row[rx] === '.') continue;
-            ctx.fillStyle = UMBRELLA_COLOURS[row[rx]];
+            const hex = UMBRELLA_COLOURS[row[rx]];
+            const ux = px - 1 + rx;
+            const uy = py - UMBRELLA.length + ry;
+            ctx.fillStyle = playerLight ? playerLight(hex, ux, uy) : hex;
             ctx.fillRect(px - 1 + rx, py - UMBRELLA.length + ry, 1, 1);
           }
         });

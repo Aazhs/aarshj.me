@@ -172,32 +172,56 @@ export function layoutProps(W) {
   return items;
 }
 
-// light = { night 0..1, dim 0..1, golden 0..1, ambient (hex), wet 0..1, lampColour (hex) }
-export function drawProps(ctx, items, groundY, light) {
+// One lighting model for scenery and the character.
+// light = { night, dim, golden, overcast, wet (all 0..1), ambient (hex), lampColour (hex) }
+// Returns colourAt(hex, x, y, strength) -> css colour; strength < 1 keeps things brighter.
+export function makeLighting(items, groundY, light) {
   const ambient = rgb(light.ambient);
   const warm = [255, 176, 112];
   const lampRgb = rgb(light.lampColour);
   // dim: 0 in full daylight, 1 once it is dark (follows the sun's altitude).
   const darken = Math.min(0.9, 0.06 + 0.8 * light.dim + 0.45 * light.wet);
   const lampItem = items.find((it) => it.lamp);
-  const lampOn = light.night > 0.08;
-  const lampX = lampItem ? lampItem.x + 2 : -999;
-  const lampY = groundY - LAMP.length + 1;
+  const lampOn = Boolean(lampItem) && light.night > 0.08;
+  const lamp = { x: lampItem ? lampItem.x + 2 : -999, y: groundY - LAMP.length + 1, on: lampOn };
   const reach = 22;
+  const cache = new Map();
+  const colourAt = (hex, x, y, strength = 1) => {
+    let c = cache.get(hex);
+    if (!c) {
+      c = rgb(hex);
+      cache.set(hex, c);
+    }
+    c = mix(c, warm, light.golden * 0.28);
+    // Overcast light is flat: pull colours towards grey.
+    const lum = 0.3 * c[0] + 0.59 * c[1] + 0.11 * c[2];
+    c = mix(c, [lum, lum, lum], (light.overcast ?? 0) * 0.45);
+    c = mix(c, ambient, darken * strength);
+    if (lampOn) {
+      const d = Math.hypot(x - lamp.x, y - lamp.y);
+      if (d < reach) c = mix(c, lampRgb, (1 - d / reach) ** 2 * 0.6 * light.night);
+    }
+    return css(c);
+  };
+  return { colourAt, lamp };
+}
+
+export function drawProps(ctx, items, groundY, light) {
+  const { colourAt, lamp } = makeLighting(items, groundY, light);
 
   // Lamp glow and its pool of light on the ground, under everything else.
-  if (lampOn && lampItem) {
+  if (lamp.on) {
     [[16, 0.05], [11, 0.07], [6, 0.11]].forEach(([r, a]) => {
       ctx.globalAlpha = a * light.night;
       ctx.fillStyle = light.lampColour;
       for (let y = -r; y <= r; y += 1) {
         const half = Math.round(Math.sqrt(r * r - y * y));
-        ctx.fillRect(lampX - half, lampY + y, half * 2 + 1, 1);
+        ctx.fillRect(lamp.x - half, lamp.y + y, half * 2 + 1, 1);
       }
     });
     ctx.globalAlpha = 0.22 * light.night;
-    ctx.fillRect(lampX - 10, groundY, 21, 1);
-    ctx.fillRect(lampX - 6, groundY + 1, 13, 1);
+    ctx.fillRect(lamp.x - 10, groundY, 21, 1);
+    ctx.fillRect(lamp.x - 6, groundY + 1, 13, 1);
     ctx.globalAlpha = 1;
   }
 
@@ -208,22 +232,11 @@ export function drawProps(ctx, items, groundY, light) {
       for (let rx = 0; rx < row.length; rx += 1) {
         const key = row[rx];
         if (key === '.') continue;
-        let c;
         if (key === 'G' && it.lamp) {
-          c = lampOn ? lampRgb : rgb(DAY.G);
+          ctx.fillStyle = lamp.on ? light.lampColour : DAY.G;
         } else {
-          c = rgb(DAY[key]);
-          c = mix(c, warm, light.golden * 0.28);
-          // Overcast light is flat: pull colours towards grey.
-          const lum = 0.3 * c[0] + 0.59 * c[1] + 0.11 * c[2];
-          c = mix(c, [lum, lum, lum], (light.overcast ?? 0) * 0.45);
-          c = mix(c, ambient, darken);
-          if (lampOn) {
-            const d = Math.hypot(it.x + rx - lampX, y0 + ry - lampY);
-            if (d < reach) c = mix(c, lampRgb, (1 - d / reach) ** 2 * 0.6 * light.night);
-          }
+          ctx.fillStyle = colourAt(DAY[key], it.x + rx, y0 + ry);
         }
-        ctx.fillStyle = css(c);
         ctx.fillRect(it.x + rx, y0 + ry, 1, 1);
       }
     });
