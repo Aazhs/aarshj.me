@@ -1182,6 +1182,11 @@ export default function PixelScene({ onSky, music, weather }) {
       sayUntil = performance.now() + ms;
     }
 
+    function hideBubble() {
+      if (sayRef.current) sayRef.current.hidden = true;
+      sayUntil = 0;
+    }
+
     function placeBubble(t) {
       const el = sayRef.current;
       if (!el || el.hidden) return;
@@ -1672,6 +1677,8 @@ export default function PixelScene({ onSky, music, weather }) {
       const rect = canvas.getBoundingClientRect();
       if (e.clientY < rect.top || e.clientY > rect.bottom) return;
       const p = sceneXY(e);
+      // Any click that isn't on the character dismisses its speech bubble.
+      if (!hitPlayer(p)) hideBubble();
       // Shift-click a constellation: open its Wikipedia article.
       if (e.shiftKey && hoverConst) {
         window.open(`https://en.wikipedia.org/wiki/${hoverConst.wiki}`, '_blank', 'noopener');
@@ -1762,6 +1769,12 @@ export default function PixelScene({ onSky, music, weather }) {
     };
 
     const host = canvas.parentElement;
+    // Clicks outside the scene, or on its links and buttons (including the
+    // preview gear), also dismiss the bubble.
+    const onDocDown = (e) => {
+      if (!host.contains(e.target) || e.target.closest('a, button, input, textarea, select, .pv')) hideBubble();
+    };
+    document.addEventListener('pointerdown', onDocDown);
     host.addEventListener('pointermove', onPointer);
     host.addEventListener('pointerleave', onLeave);
     host.addEventListener('click', onClick);
@@ -1778,6 +1791,7 @@ export default function PixelScene({ onSky, music, weather }) {
       host.removeEventListener('pointermove', onPointer);
       host.removeEventListener('pointerleave', onLeave);
       host.removeEventListener('click', onClick);
+      document.removeEventListener('pointerdown', onDocDown);
       window.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('keyup', onKeyUp);
     };

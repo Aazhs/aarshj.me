@@ -2,6 +2,22 @@
 
 Ideas for aarshj.me, roughly in the order I'd build them.
 
+## Phone
+
+Open with **P** or by clicking the character (Shift stays for constellations).
+
+- [ ] **Pixel phone.** The character pulls out a phone: a small pixel-art phone floats just in front of the sprite with a home screen of app icons. Esc, P again, or clicking away closes it; arrow keys or clicks pick apps. Previewable from the settings panel (per AGENTS.md).
+- [ ] **Social apps.** GitHub, LinkedIn and email now; Instagram and X once the handles are added. Each opens the profile in a new tab.
+- [ ] **Music app.** The Last.fm now-playing track with album art and a tiny pixel equaliser; tapping opens the track.
+- [ ] **Weather app.** Today's Pune weather from Open-Meteo plus the next few hours, in pixel icons.
+- [ ] **Sky app.** Tonight's planets, the active meteor shower, moon phase, and the next ISS pass.
+- [ ] **Stats app.** CodeChef, Codeforces and LeetCode ratings from `stats.json` as a pixel home-screen widget.
+- [ ] **Camera app.** Saves a PNG snapshot of the current scene, upscaled and pixel-perfect.
+- [ ] **Snake app.** A tiny Snake game on the phone screen, high score saved in the browser.
+- [ ] **Messages app.** Friendly texts from Aarsh; during horror mode, unread messages from the trapped copy appear.
+- [ ] **Settings app.** Opens the preview panel (time, weather, moon, music).
+- [ ] **Notifications.** The phone buzzes (the sprite jiggles, a small icon appears) for real events: ISS overhead, a meteor shower peak, a new song starting.
+
 ## Sky and world
 
 - [x] **Live weather.** Pull Pune's current weather from Open-Meteo (free, no key, works from the browser) and show it in the scene: pixel rain, drifting fog, heavier clouds, lightning flashes in storms. Monsoon months get the most rain.
@@ -52,16 +68,29 @@ Ideas for aarshj.me, roughly in the order I'd build them.
 - [ ] **Satellite trains** (Starlink) crossing the sky a few nights after a launch.
 - [ ] **Album-colour sky:** tint the sky slightly with the dominant colour of the album art that's playing.
 
+- [ ] **Wish on a shooting star:** clicking a meteor while it's visible shows a small "wish made" sparkle.
+- [ ] **Moon close-up:** clicking the moon shows its phase, illumination, and moonrise and moonset times.
+- [ ] **Light-pollution toggle:** see how many more stars Pune would show without city lights.
+
 ### World
 - [ ] **Birds at dawn and dusk** flying across in a V; **bats** at dusk; an **owl** that blinks in the tree at night.
 - [ ] **City lights** twinkling on the far hills after dark, and a **plane** with blinking lights crossing now and then.
 - [ ] **A cat** that wanders in sometimes; click it to pet it.
 - [ ] **Campfire** next to the bench at night that you can light with a click.
 
+- [ ] **Day-of-the-week touches:** a dog walker on weekends, more lit windows on Friday night.
+- [ ] **Distant train** crossing the far hills, windows lit at night.
+- [ ] **Puddles** that form after rain and reflect the lamp at night.
+- [ ] **Wind:** grass, flowers and the tree lean slightly with the live wind speed.
+
 ### Character
 - [ ] **Eyes follow the cursor** when it's nearby.
 - [ ] **Falls asleep on the bench at night** with floating Zzz, waking if you click.
 - [ ] **Weather outfits:** raincoat in heavy rain, sunglasses at midday.
+
+- [ ] **Idle animations:** stretching, checking the phone, kicking a pebble when bored.
+- [ ] **Remembers you:** a returning visitor gets "welcome back" (stored in the browser).
+- [ ] **Emotes on keys 1-4:** wave, dance, sit, sleep.
 
 ### Horror (2–4 am)
 - [ ] **Console messages** for developers who open DevTools at night ("you found the logs").
@@ -72,4 +101,7 @@ Ideas for aarshj.me, roughly in the order I'd build them.
 - [ ] **Coding time** from WakaTime next to the competitive programming stats.
 - [ ] **Screenshot tests per preview state:** use the preview panel's settings to render every time, weather and moon in Playwright and catch visual regressions.
 - [ ] **Offline support (PWA)** so the scene still loads without a connection.
-
+- [ ] **Terminal mode:** pressing ` opens a tiny pixel terminal with commands (help, projects, contact, weather, sky).
+- [ ] **Sound design** (off by default): footsteps, a lamp click, rain, a soft chime for the ISS.
+- [ ] **Guestbook signs:** visitors plant a tiny signpost in the ground with a one-line message (needs a backend; a good reason to move to Vercel).
+- [ ] **Achievements:** small badges for finding easter eggs (Konami, lamp, constellations, horror), shown in the phone.
