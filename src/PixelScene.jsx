@@ -1572,7 +1572,7 @@ export default function PixelScene({ onSky, music, weather }) {
       const p = { x: pointer.x * W, y: pointer.y * H };
       const ip = issScreen();
       const overIss = ip && Math.hypot(ip.x - p.x, ip.y - p.y) < 5;
-      host.style.cursor = pointer.active && (overIss || hitProp(p) || hitPlayer(p)) ? 'pointer' : '';
+      host.style.cursor = pointer.active && (overIss || (shiftHeld && hoverConst) || hitProp(p) || hitPlayer(p)) ? 'pointer' : '';
     };
 
     // Shortest distance (scene pixels) from a point to a constellation's
@@ -1630,7 +1630,7 @@ export default function PixelScene({ onSky, music, weather }) {
         });
         if (near) {
           // Label it at the pointer so the name sits where you're looking.
-          best = { x: Math.round(lx), y: Math.round(ly), name: near.c.name, kind: 'Constellation', con: near.c };
+          best = { x: Math.round(lx), y: Math.round(ly), name: near.c.name, kind: 'Shift-click to read more', con: near.c };
         }
       }
       hoverConst = shiftHeld ? best?.con ?? null : null;
@@ -1672,6 +1672,11 @@ export default function PixelScene({ onSky, music, weather }) {
       const rect = canvas.getBoundingClientRect();
       if (e.clientY < rect.top || e.clientY > rect.bottom) return;
       const p = sceneXY(e);
+      // Shift-click a constellation: open its Wikipedia article.
+      if (e.shiftKey && hoverConst) {
+        window.open(`https://en.wikipedia.org/wiki/${hoverConst.wiki}`, '_blank', 'noopener');
+        return;
+      }
       const ip = issScreen();
       if (ip && Math.hypot(ip.x - p.x, ip.y - p.y) < 5) {
         window.open(ISS_LIVE_URL, '_blank', 'noopener');

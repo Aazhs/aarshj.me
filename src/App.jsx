@@ -773,7 +773,7 @@ function App() {
               {sky && sky.sunAltDeg < -6 ? (
                 <>
                   <br />
-                  hold <kbd>Shift</kbd> for constellations
+                  hold <kbd>Shift</kbd> for constellations, Shift-click to read more
                 </>
               ) : null}
             </span>
