@@ -15,6 +15,14 @@ Use Node 20 to match the GitHub Actions workflow.
 ## Coding Style & Naming Conventions
 Follow the existing style in `src/`: ES modules, React function components, semicolons, and single quotes. Use 2-space indentation in JSX and CSS blocks. Name React components in `PascalCase`, helper functions in `camelCase`, and constants in `UPPER_SNAKE_CASE` when they are configuration-like values such as `CONTACT_FORM_ENDPOINT`. Keep new assets under clear paths like `public/images/feature-name.png`.
 
+## Preview Panel (required for every scene feature)
+The gear button at the top right opens a preview panel (`src/PreviewPanel.jsx`) for trying the scene at any time, weather, moon or music mood without waiting for it to happen live. Its controls come from `PREVIEW_CONTROLS` in `src/preview.js`.
+
+Every new feature that depends on time, date, weather, sky events, music, or anything else live **must** be previewable there:
+- Add a control to `PREVIEW_CONTROLS` (`time`, `choice` or `range`; add a new type in `PreviewPanel.jsx` if none fits) and a matching `null` default in `seedFromUrl` and `resetPreview`.
+- Read the value with `getPreview()` where the feature decides what to show, falling back to live data when it is `null`.
+- The scene redraws automatically on any preview change (`subscribePreview` in `PixelScene.jsx`); nothing is saved, and a reload returns to live.
+
 ## Testing Guidelines
 There is currently no automated test suite or lint config in `package.json`. Until one is added, treat `npm run build` as the minimum validation step and manually verify key flows in `npm run dev` or `npm run preview`, especially animations, external API fallbacks, responsive layout, and the contact form. If you add tests later, colocate them with the feature or under a dedicated `tests/` directory and use `*.test.jsx` naming.
 

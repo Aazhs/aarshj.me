@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import PixelScene, { SpriteIcon } from './PixelScene';
-import { moodForGenre } from './music';
+import { MOODS, moodForGenre } from './music';
+import PreviewPanel, { usePreview } from './PreviewPanel';
 import { previewTime } from './sky';
-import { fetchWeather } from './weather';
+import { fetchWeather, previewWeather } from './weather';
 
 const CONTACT_EMAIL = 'aarshjozhi@gmail.com';
 const CONTACT_FORM_ENDPOINT = 'https://formspree.io/f/xjglvljd';
@@ -580,7 +581,14 @@ function App() {
   const [openSlot, setOpenSlot] = useState(null);
   const [sky, setSky] = useState(null);
   const track = useNowPlaying();
-  const weather = useWeather();
+  const liveWeather = useWeather();
+  // Settings-panel previews override live data (memoised so the scene isn't re-fed every render).
+  const preview = usePreview();
+  const weather = useMemo(
+    () => previewWeather() ?? liveWeather,
+    [preview.weather, preview.cloud, liveWeather]
+  );
+  const music = preview.mood ? MOODS[preview.mood] : track?.live ? track.mood : null;
 
   useEffect(() => {
     let active = true;
@@ -728,11 +736,12 @@ function App() {
           <a href="#skills">Stack</a>
           <a href="#contact">Contact</a>
         </nav>
+        <PreviewPanel />
       </header>
 
       <main>
         <section className="hero" id="home">
-          <PixelScene onSky={setSky} music={track?.live ? track.mood : null} weather={weather} />
+          <PixelScene onSky={setSky} music={music} weather={weather} />
           <SkyClock sky={sky} track={track} weather={weather} />
           <div className="hero-copy">
             <h1 className="hero-title">

@@ -1,6 +1,6 @@
 // Maps an Apple Music genre to how the hero scene moves.
 // Last.fm has no audio features, so genre is the best signal for energy and tempo.
-const MOODS = {
+export const MOODS = {
   hype: { name: 'hype', bpm: 126, energy: 1 },
   pop: { name: 'pop', bpm: 108, energy: 0.7 },
   chill: { name: 'chill', bpm: 84, energy: 0.4 },

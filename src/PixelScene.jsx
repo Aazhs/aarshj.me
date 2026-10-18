@@ -5,6 +5,7 @@ import {
 } from './sky';
 import { NAMED_STARS, planetPositions } from './planets';
 import { benchSeat, drawProps, layoutProps, makeLighting, UMBRELLA, UMBRELLA_COLOURS } from './props';
+import { subscribePreview } from './preview';
 import STARS from './stars.json';
 
 // Low-res canvas scaled up with image-rendering: pixelated.
@@ -258,6 +259,16 @@ export default function PixelScene({ onSky, music, weather }) {
     }
     updateSky();
     const skyTimer = setInterval(updateSky, 15000);
+    // Redraw at once when the settings panel changes time or moon (once per frame while dragging).
+    let previewQueued = false;
+    const unsubPreview = subscribePreview(() => {
+      if (previewQueued) return;
+      previewQueued = true;
+      requestAnimationFrame(() => {
+        previewQueued = false;
+        updateSky();
+      });
+    });
 
     const pointer = { x: 0.5, y: 0.4, active: false };
     // Eased pointer so the parallax glides instead of snapping.
@@ -310,7 +321,8 @@ export default function PixelScene({ onSky, music, weather }) {
         // Followers stay near the ground: by day they are butterflies.
         const hy = H * (follower ? 0.72 + rand() * 0.18 : 0.3 + rand() * 0.62);
         const wing = ['#ffd77a', '#ff9fb2', '#8fd3c9', '#f5f0e6'][i % 4];
-        return { follower, wing, hx, hy, x: hx, y: hy, vx: 0, vy: 0, p: rand() * 10 };
+        // rank orders the followers, so the first one or two can be butterflies.
+        return { follower, rank: Math.floor(i / 5), wing, hx, hy, x: hx, y: hy, vx: 0, vy: 0, p: rand() * 10 };
       });
       player.y = groundY() - SPRITE_IDLE.length;
       player.x = Math.min(player.x, W - 10);
@@ -1062,11 +1074,14 @@ export default function PixelScene({ onSky, music, weather }) {
       });
     }
 
-    // Fireflies only after dark (pulsing with music); by day the followers
-    // are butterflies instead, flapping as they drift.
+    // Fireflies only after dark (pulsing with music). By day, upbeat music
+    // brings out butterflies: two for hype (rap, dance, rock), one for pop,
+    // none for chill, calm, or no music.
     function drawFlies(t) {
       const dark = Math.min(1, night * 1.5) * (1 - wet * 0.8);
-      const day = Math.max(0, 1 - night * 2) * (1 - wet);
+      const day = Math.max(0, 1 - night * 2) * (1 - wet) * beat.mix;
+      const mood = musicRef.current?.name;
+      const butterflies = mood === 'hype' ? 2 : mood === 'pop' ? 1 : 0;
       flies.forEach((f) => {
         const x = Math.round(f.x);
         const y = Math.round(f.y);
@@ -1076,7 +1091,7 @@ export default function PixelScene({ onSky, music, weather }) {
           ctx.fillStyle = PALETTE.firefly;
           ctx.fillRect(x, y, 1, 1);
         }
-        if (day > 0.01 && f.follower) {
+        if (day > 0.01 && f.follower && f.rank < butterflies) {
           const open = Math.floor(t / (beat.mix > 0.05 ? 110 : 180) + f.p * 3) % 2 === 0;
           ctx.globalAlpha = day;
           ctx.fillStyle = f.wing;
@@ -1246,6 +1261,7 @@ export default function PixelScene({ onSky, music, weather }) {
     return () => {
       cancelAnimationFrame(raf);
       clearInterval(skyTimer);
+      unsubPreview();
       apiRef.current = null;
       resize.disconnect();
       io.disconnect();

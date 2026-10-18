@@ -1,3 +1,5 @@
+import { getPreview } from './preview';
+
 // Sun and moon positions for the hero sky. Formulas follow SunCalc
 // (Vladimir Agafonkin, BSD-2), which is accurate to well under a degree.
 
@@ -108,9 +110,9 @@ function isBlueMoon(date) {
   return fullDays.length >= 2 && ist.getUTCDate() >= fullDays[1] - 1 && ist.getUTCDate() <= fullDays[1] + 1;
 }
 
-// Special moons, previewable with ?moon=blood|super|blue|low.
+// Special moons; previewable from the settings panel (or ?moon=blood|super|blue|low).
 function moonEvent(date, moonAltDeg, fraction, distKm) {
-  const forced = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('moon');
+  const forced = getPreview().moon;
   if (forced === 'blood') return { kind: 'blood', strength: 1, label: 'Blood moon (total lunar eclipse)' };
   if (forced === 'super') return { kind: 'super', strength: 1, label: 'Supermoon' };
   if (forced === 'blue') return { kind: 'blue', strength: 1, label: 'Blue moon' };
@@ -122,19 +124,13 @@ function moonEvent(date, moonAltDeg, fraction, distKm) {
   return null;
 }
 
-// Preview helpers: ?time=2026-10-18T18:05+05:30 and ?moon=blood|super|blue|low.
-// A literal "+" in a query string arrives as a space, so put it back.
+// Preview time and moon come from the settings panel (seeded from the URL).
 export function previewTime() {
-  if (typeof window === 'undefined') return null;
-  const raw = new URLSearchParams(window.location.search).get('time');
-  if (!raw) return null;
-  const parsed = new Date(raw.trim().replace(' ', '+'));
-  return Number.isNaN(parsed.getTime()) ? null : parsed;
+  return getPreview().time;
 }
 
 function previewMoon() {
-  if (typeof window === 'undefined') return null;
-  return new URLSearchParams(window.location.search).get('moon');
+  return getPreview().moon;
 }
 
 export function skyState(date = new Date(), { lat, lng } = PUNE) {

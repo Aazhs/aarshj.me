@@ -141,6 +141,7 @@ h3 {
 
 .topbar nav {
   display: flex;
+  margin-left: auto;
   gap: 4px;
   flex-wrap: wrap;
   justify-content: flex-end;
@@ -156,6 +157,146 @@ h3 {
 .topbar nav a:hover {
   background: var(--moon);
   color: var(--night);
+}
+
+/* ---------- Preview settings ---------- */
+
+.pv {
+  position: relative;
+}
+
+.pv-gear {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  cursor: pointer;
+  color: var(--ink-soft);
+  background: var(--glass);
+}
+
+.pv-gear svg {
+  width: 16px;
+  height: 16px;
+}
+
+.pv-gear:hover,
+.pv-gear[aria-expanded='true'] {
+  color: var(--night);
+  background: var(--moon);
+}
+
+/* Gold dot while a preview is active. */
+.pv-gear.on::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 6px;
+  height: 6px;
+  background: var(--gold);
+}
+
+.pv-panel {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  z-index: 30;
+  display: grid;
+  gap: 12px;
+  width: min(300px, calc(100vw - 32px));
+  padding: 16px;
+  background: var(--night);
+  box-shadow:
+    0 -4px 0 0 var(--panel-edge),
+    0 4px 0 0 var(--panel-edge),
+    -4px 0 0 0 var(--panel-edge),
+    4px 0 0 0 var(--panel-edge);
+}
+
+.pv-title {
+  margin: 0;
+  font-family: var(--display);
+  font-size: var(--t-lg);
+}
+
+.pv-note {
+  margin: -6px 0 0;
+  font-size: var(--t-sm);
+  color: var(--ink-soft);
+}
+
+.pv-field {
+  display: grid;
+  gap: 6px;
+}
+
+.pv-label {
+  font-family: var(--display);
+  font-size: var(--t-sm);
+}
+
+.pv-row-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.pv-time {
+  display: grid;
+  gap: 6px;
+}
+
+.pv-live {
+  padding: 2px 8px;
+  border: 0;
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--t-sm);
+  color: var(--night);
+  background: var(--foam);
+}
+
+.pv-range {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.pv-range input {
+  flex: 1;
+}
+
+.pv-range span {
+  min-width: 3.5ch;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.pv-panel input[type='range'] {
+  width: 100%;
+  accent-color: var(--gold);
+}
+
+.pv-panel select,
+.pv-panel input[type='date'] {
+  width: 100%;
+  padding: 6px 8px;
+  font: inherit;
+  color: var(--moon);
+  background: var(--panel);
+  border: 0;
+  box-shadow: inset 2px 2px 0 0 var(--panel-edge);
+  color-scheme: dark;
+}
+
+.pv-reset:disabled {
+  opacity: 0.5;
+  cursor: default;
 }
 
 /* ---------- Hero ---------- */

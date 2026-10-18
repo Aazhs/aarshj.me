@@ -1,5 +1,6 @@
 // Live weather for Pune from Open-Meteo (free, no key, allows browser requests).
-// Preview any condition with ?weather=clear|cloudy|fog|drizzle|rain|storm.
+// Preview any condition from the settings panel (or ?weather=clear|cloudy|fog|drizzle|rain|storm).
+import { getPreview } from './preview';
 
 const URL_PUNE =
   'https://api.open-meteo.com/v1/forecast?latitude=18.52&longitude=73.86' +
@@ -34,14 +35,14 @@ function shape({ code, cloud, temp, wind }) {
 }
 
 export function previewWeather() {
-  if (typeof window === 'undefined') return null;
-  const key = new URLSearchParams(window.location.search).get('weather');
-  return key && PREVIEWS[key] ? shape(PREVIEWS[key]) : null;
+  const { weather, cloud } = getPreview();
+  if (!weather || !PREVIEWS[weather]) return null;
+  const base = PREVIEWS[weather];
+  return shape({ ...base, cloud: cloud ?? base.cloud });
 }
 
+// Always the real weather; previews are layered on top in App.
 export async function fetchWeather() {
-  const preview = previewWeather();
-  if (preview) return preview;
   const res = await fetch(URL_PUNE, { signal: AbortSignal.timeout(8000) });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const c = (await res.json()).current;
