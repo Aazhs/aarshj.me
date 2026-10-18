@@ -1575,6 +1575,27 @@ export default function PixelScene({ onSky, music, weather }) {
       host.style.cursor = pointer.active && (overIss || hitProp(p) || hitPlayer(p)) ? 'pointer' : '';
     };
 
+    // Shortest distance (scene pixels) from a point to a constellation's
+    // visible line segments and their stars.
+    function distToLines(cp, px, py) {
+      let best = Infinity;
+      cp.lines.forEach((line) => {
+        for (let i = 0; i < line.length; i += 1) {
+          const b = line[i];
+          if (b.alt < 0) continue;
+          best = Math.min(best, Math.hypot(b.x - px, b.y - py));
+          const a = line[i - 1];
+          if (!a || a.alt < 0 || Math.abs(a.x - b.x) > W * 0.5) continue;
+          const vx = b.x - a.x;
+          const vy = b.y - a.y;
+          const len2 = vx * vx + vy * vy || 1;
+          const k = Math.max(0, Math.min(1, ((px - a.x) * vx + (py - a.y) * vy) / len2));
+          best = Math.min(best, Math.hypot(a.x + vx * k - px, a.y + vy * k - py));
+        }
+      });
+      return best;
+    }
+
     // Planet and bright-star names on hover.
     function showTip() {
       const tip = tipRef.current;
@@ -1595,19 +1616,22 @@ export default function PixelScene({ onSky, music, weather }) {
           best = target;
         }
       });
-      // Holding Shift: the constellation whose centre is nearest the pointer.
+      // Holding Shift: the constellation whose lines or stars are nearest the
+      // pointer (anywhere along a line, not just its centre).
       if (!best && shiftHeld && pointer.active && night > 0.3 && overcast < 0.85) {
         let near = null;
-        let nearD = 14;
+        let nearD = 5;
         constProj.forEach((cp) => {
-          if (cp.label.alt < 3) return;
-          const d = Math.hypot(cp.label.x - lx, cp.label.y - ly);
+          const d = Math.min(distToLines(cp, lx, ly), cp.label.alt > 3 ? Math.hypot(cp.label.x - lx, cp.label.y - ly) - 6 : Infinity);
           if (d < nearD) {
             nearD = d;
             near = cp;
           }
         });
-        if (near) best = { x: Math.round(near.label.x), y: Math.round(near.label.y), name: near.c.name, kind: 'Constellation', con: near.c };
+        if (near) {
+          // Label it at the pointer so the name sits where you're looking.
+          best = { x: Math.round(lx), y: Math.round(ly), name: near.c.name, kind: 'Constellation', con: near.c };
+        }
       }
       hoverConst = shiftHeld ? best?.con ?? null : null;
       if (!best || !pointer.active) {
