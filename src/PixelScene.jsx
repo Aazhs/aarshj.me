@@ -230,6 +230,7 @@ export default function PixelScene({ onSky, music, weather }) {
     let drops = [];
     let splashes = [];
     let bolt = null;
+    let cloudBucket = -1;
     let nextBolt = 0;
 
     function updateSky() {
@@ -243,6 +244,12 @@ export default function PixelScene({ onSky, music, weather }) {
       applyPageTheme(PALETTE);
       // 0 in daylight, 1 once the sun is well below the horizon.
       night = Math.max(0, Math.min(1, (-sky.sunAltDeg - 2) / 10));
+      // Rebuild the clouds when day turns to night (or back).
+      const bucket = Math.round(night * 4);
+      if (W && bucket !== cloudBucket) {
+        cloudBucket = bucket;
+        makeClouds();
+      }
       bakeSky();
       skyRef.current?.(sky);
       if (reduceMotion && layers) requestAnimationFrame(frame);
@@ -297,8 +304,11 @@ export default function PixelScene({ onSky, music, weather }) {
       const flyCount = Math.max(24, Math.round(W / 9));
       flies = Array.from({ length: flyCount }, (_, i) => {
         const hx = ((i + rand() * 0.8) / flyCount) * W;
-        const hy = H * (0.3 + rand() * 0.62);
-        return { follower: i % 5 === 0, hx, hy, x: hx, y: hy, vx: 0, vy: 0, p: rand() * 10 };
+        const follower = i % 5 === 0;
+        // Followers stay near the ground: by day they are butterflies.
+        const hy = H * (follower ? 0.72 + rand() * 0.18 : 0.3 + rand() * 0.62);
+        const wing = ['#ffd77a', '#ff9fb2', '#8fd3c9', '#f5f0e6'][i % 4];
+        return { follower, wing, hx, hy, x: hx, y: hy, vx: 0, vy: 0, p: rand() * 10 };
       });
       player.y = groundY() - SPRITE_IDLE.length;
       player.x = Math.min(player.x, W - 10);
@@ -309,7 +319,9 @@ export default function PixelScene({ onSky, music, weather }) {
     function makeClouds() {
       const rand = seededNoise(777);
       const cover = wx ? wx.cloud : 0.2;
-      const count = Math.max(3, Math.round(W / 70)) + Math.round(cover * cover * (W / 20));
+      // Thin the clouds out at night so the stars show.
+      const thin = 1 - 0.65 * night;
+      const count = Math.max(1, Math.round((W / 70) * thin)) + Math.round(cover * cover * (W / 20) * (1 - 0.4 * night));
       const windy = 1 + (wx ? wx.wind : 8) / 20;
       clouds = Array.from({ length: count }, (_, i) => {
         const w = Math.round(18 + rand() * (30 + cover * 40));
@@ -435,20 +447,45 @@ export default function PixelScene({ onSky, music, weather }) {
     // Fog: a dithered band that thickens towards the ground.
     const fogCanvas = document.createElement('canvas');
     let fogOn = false;
+    // Fog: see-through bands that thicken towards the valleys (no dither
+    // grid), plus a few long wisps that drift sideways each frame.
+    let fogColour = '#dfe4ea';
+    let fogStrength = 0;
+    let wisps = [];
     function bakeFog() {
-      const strength = wx?.kind === 'fog' ? 1 : wet > 0 ? 0.35 : 0;
-      fogOn = strength > 0;
+      fogStrength = wx?.kind === 'fog' ? 1 : wet > 0 ? 0.3 : 0;
+      fogOn = fogStrength > 0;
       if (!fogOn) return;
+      fogColour = mixHex(PALETTE.haze, '#e4e8ee', 0.45 - night * 0.3);
       fogCanvas.width = W;
       fogCanvas.height = H;
       const g = fogCanvas.getContext('2d');
-      g.fillStyle = mixHex(PALETTE.haze, '#dfe4ea', 0.45 - night * 0.3);
-      for (let y = Math.round(H * 0.5); y < H; y += 1) {
-        const density = Math.min(1, (y - H * 0.5) / (H * 0.3)) * 0.55 * strength;
-        for (let x = 0; x < W; x += 1) {
-          if (BAYER[(y & 3) * 4 + (x & 3)] < density) g.fillRect(x, y, 1, 1);
-        }
+      g.fillStyle = fogColour;
+      const y0 = Math.round(H * 0.58);
+      for (let y = y0; y < H; y += 2) {
+        g.globalAlpha = Math.min(1, (y - y0) / (H * 0.28)) * 0.32 * fogStrength;
+        g.fillRect(0, y, W, 2);
       }
+      g.globalAlpha = 1;
+      const rand = seededNoise(99);
+      wisps = Array.from({ length: Math.round(6 * fogStrength) + 2 }, () => ({
+        x: rand() * W,
+        y: Math.round(H * (0.6 + rand() * 0.25)),
+        w: Math.round(30 + rand() * 70),
+        v: 1 + rand() * 2
+      }));
+    }
+
+    function drawFog(alpha) {
+      ctx.globalAlpha = alpha;
+      ctx.drawImage(fogCanvas, 0, 0);
+      ctx.fillStyle = fogColour;
+      wisps.forEach((w) => {
+        ctx.globalAlpha = 0.14 * fogStrength * alpha;
+        ctx.fillRect(Math.round(w.x), w.y, w.w, 2);
+        ctx.fillRect(Math.round(w.x) + 6, w.y - 1, w.w - 12, 1);
+      });
+      ctx.globalAlpha = 1;
     }
 
     // Pixel-art sky gradient: blend the palette stops into many small steps,
@@ -1016,13 +1053,36 @@ export default function PixelScene({ onSky, music, weather }) {
       });
     }
 
+    // Fireflies only after dark (pulsing with music); by day the followers
+    // are butterflies instead, flapping as they drift.
     function drawFlies(t) {
+      const dark = Math.min(1, night * 1.5) * (1 - wet * 0.8);
+      const day = Math.max(0, 1 - night * 2) * (1 - wet);
       flies.forEach((f) => {
-        const glow = Math.max(Math.min(1, night * 1.5), beat.mix * 0.7) * (1 - wet * 0.8);
-        const flicker = 0.45 + 0.55 * Math.abs(Math.sin(t * 0.003 + f.p));
-        ctx.globalAlpha = Math.min(1, glow * (flicker * (1 - beat.mix * 0.5) + beat.pulse * beat.mix * 0.6));
-        ctx.fillStyle = PALETTE.firefly;
-        ctx.fillRect(Math.round(f.x), Math.round(f.y), 1, 1);
+        const x = Math.round(f.x);
+        const y = Math.round(f.y);
+        if (dark > 0.01) {
+          const flicker = 0.45 + 0.55 * Math.abs(Math.sin(t * 0.003 + f.p));
+          ctx.globalAlpha = Math.min(1, dark * (flicker * (1 - beat.mix * 0.5) + beat.pulse * beat.mix * 0.6));
+          ctx.fillStyle = PALETTE.firefly;
+          ctx.fillRect(x, y, 1, 1);
+        }
+        if (day > 0.01 && f.follower) {
+          const open = Math.floor(t / (beat.mix > 0.05 ? 110 : 180) + f.p * 3) % 2 === 0;
+          ctx.globalAlpha = day;
+          ctx.fillStyle = f.wing;
+          if (open) {
+            ctx.fillRect(x - 1, y, 1, 1);
+            ctx.fillRect(x + 1, y, 1, 1);
+            ctx.fillRect(x - 1, y - 1, 1, 1);
+            ctx.fillRect(x + 1, y - 1, 1, 1);
+          } else {
+            ctx.fillRect(x - 1, y - 1, 1, 1);
+            ctx.fillRect(x + 1, y - 1, 1, 1);
+          }
+          ctx.fillStyle = '#3a2f3f';
+          ctx.fillRect(x, y, 1, 1);
+        }
       });
       ctx.globalAlpha = 1;
     }
@@ -1054,19 +1114,19 @@ export default function PixelScene({ onSky, music, weather }) {
       updatePlayer(dt, t);
       updateFlies(dt, t);
       updateRain(dt, t);
+      wisps.forEach((w) => {
+        w.x += w.v * dt;
+        if (w.x > W) w.x = -w.w;
+      });
 
       drawSky(t);
       clouds.forEach((c) => c.canvas && ctx.drawImage(c.canvas, Math.round(c.x), c.y));
       drawRange('far', 0.2);
       drawRange('peak', 0.4);
-      if (fogOn) ctx.drawImage(fogCanvas, 0, 0);
+      if (fogOn) drawFog(1);
       drawRange('mid', 0.7);
       drawRange('near', 1);
-      if (fogOn) {
-        ctx.globalAlpha = 0.5;
-        ctx.drawImage(fogCanvas, 0, 0);
-        ctx.globalAlpha = 1;
-      }
+      if (fogOn) drawFog(0.4);
       drawGround();
       drawPlayer();
       drawNotes();
