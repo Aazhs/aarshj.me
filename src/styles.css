@@ -370,46 +370,38 @@ h3 {
   position: absolute;
   right: var(--gutter);
   bottom: 3vh;
-  padding: 10px 12px;
+  padding: 5px 10px;
   background: var(--glass);
-  box-shadow: 0 0 0 2px var(--panel-edge);
 }
 
-/* Key legend: keycaps on the left, what they do on the right. */
+/* One quiet line: just the controls people wouldn't guess. */
 .hint-keys {
-  display: grid;
-  grid-template-columns: auto auto;
-  gap: 6px 12px;
-  align-items: center;
-  margin: 0;
-}
-
-.hint-keys dt {
   display: flex;
-  gap: 4px;
-  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--ink-soft);
 }
 
-.hint-keys dd {
-  margin: 0;
-  font-size: var(--t-sm);
-  color: var(--ink-soft);
+.hint-keys span {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
 }
 
 kbd {
   display: inline-grid;
   place-items: center;
-  min-width: 24px;
-  height: 22px;
-  padding: 0 6px 3px;
+  min-width: 18px;
+  height: 17px;
+  padding: 0 5px 2px;
   font-family: var(--display);
-  font-size: 0.8rem;
+  font-size: 0.7rem;
   line-height: 1;
   color: var(--night);
-  background: var(--moon);
-  box-shadow:
-    inset 0 -3px 0 rgba(0, 0, 0, 0.22),
-    0 0 0 2px var(--panel-edge);
+  background: var(--moon-dim);
+  box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.25);
 }
 
 /* Character speech bubble. */
@@ -1488,17 +1480,10 @@ main > .section {
   }
 }
 
-/* Smaller laptops: keep the legend short so it never meets the intro text. */
-@media (max-width: 1040px) {
-  .hint-keys .hint-extra {
-    display: none;
-  }
-}
-
 .hint-touch {
   display: none;
   margin: 0;
-  font-size: var(--t-sm);
+  font-size: 0.78rem;
   color: var(--ink-soft);
 }
 

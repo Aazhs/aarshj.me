@@ -768,22 +768,16 @@ function App() {
             </div>
           </div>
           <div className="hero-hint" aria-hidden="true">
-            <dl className="hint-keys">
-              <dt><kbd>←</kbd><kbd>→</kbd></dt>
-              <dd>Walk</dd>
-              <dt><kbd>↑</kbd></dt>
-              <dd>Jump</dd>
-              <dt className="hint-extra"><kbd>Click</kbd></dt>
-              <dd className="hint-extra">Move, or use the lamp and bench</dd>
-              {sky && sky.sunAltDeg < -6 ? (
-                <>
-                  <dt className="hint-extra"><kbd>Shift</kbd></dt>
-                  <dd className="hint-extra">Show constellations</dd>
-                  <dt className="hint-extra"><kbd>Shift</kbd><kbd>Click</kbd></dt>
-                  <dd className="hint-extra">Read about one</dd>
-                </>
-              ) : null}
-            </dl>
+            {sky && sky.sunAltDeg < -6 ? (
+              <p className="hint-keys">
+                <span><kbd>Shift</kbd> constellations</span>
+                <span><kbd>Shift</kbd>+<kbd>Click</kbd> read more</span>
+              </p>
+            ) : (
+              <p className="hint-keys">
+                <span>Click the lamp or bench</span>
+              </p>
+            )}
             <p className="hint-touch">Tap the ground to move</p>
           </div>
         </section>
