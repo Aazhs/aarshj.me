@@ -4,10 +4,10 @@
 
 export const PUNE_OBSERVER = { lat: 18.5204, lng: 73.8567, heightKm: 0.56 };
 
-// NASA's official "NASA Live" page lists "Space Station Views" (live video from
-// the ISS) and always links the current stream, unlike a YouTube video ID that
-// expires. Source: https://www.nasa.gov/live/ (checked with curl -sIL, HTTP 200).
-export const ISS_LIVE_URL = 'https://www.nasa.gov/live/';
+// Live video from the ISS: NASA's "Space Station Views" YouTube stream, opened with
+// its playlist so YouTube can fall back to the current stream if this video ID ends.
+// If it stops working, https://www.nasa.gov/live/ always lists the current one.
+export const ISS_LIVE_URL = 'https://youtu.be/awQzjn72bI0?list=PL2aBZuCeDwlQMf6xMgQAUAY_nbHAgW5jz';
 
 // wheretheiss.at is keyless, HTTPS and sends access-control-allow-origin: *
 // (open-notify is HTTP-only, so an HTTPS page cannot call it).
