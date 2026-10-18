@@ -248,6 +248,32 @@ kbd {
   box-shadow: 0 3px 0 var(--ridge);
 }
 
+/* Planet and star names on hover. */
+.sky-tip {
+  position: absolute;
+  z-index: 2;
+  display: grid;
+  padding: 4px 8px;
+  pointer-events: none;
+  background: var(--glass);
+  box-shadow: 0 0 0 2px var(--panel-edge);
+}
+
+.sky-tip[hidden] {
+  display: none;
+}
+
+.sky-tip strong {
+  font-family: var(--display);
+  font-size: var(--t-sm);
+  color: var(--moon);
+}
+
+.sky-tip span {
+  font-size: 0.75rem;
+  color: var(--ink-soft);
+}
+
 /* Live sky readout. */
 .sky-clock {
   position: absolute;

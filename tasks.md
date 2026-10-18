@@ -4,10 +4,11 @@ Ideas for aarshj.me, roughly in the order I'd build them.
 
 ## Sky and world
 
-- [ ] **Live weather.** Pull Pune's current weather from Open-Meteo (free, no key, works from the browser) and show it in the scene: pixel rain, drifting fog, heavier clouds, lightning flashes in storms. Monsoon months get the most rain.
+- [x] **Live weather.** Pull Pune's current weather from Open-Meteo (free, no key, works from the browser) and show it in the scene: pixel rain, drifting fog, heavier clouds, lightning flashes in storms. Monsoon months get the most rain.
 - [ ] **Meteor showers on real dates.** Raise the shooting-star rate on peak nights (Quadrantids early Jan, Perseids ~12 Aug, Geminids ~14 Dec) and name the shower in the sky clock.
-- [ ] **Planets.** Plot Venus, Mars, Jupiter and Saturn at their real positions; they don't twinkle, which is how people tell them from stars.
-- [ ] **Star names on hover.** Hovering a bright star shows its name (Sirius, Betelgeuse, Vega); holding Shift draws the constellation lines around it.
+- [x] **Planets.** Plot Venus, Mars, Jupiter and Saturn at their real positions; they don't twinkle, which is how people tell them from stars.
+- [x] **Star names on hover.** Hovering a bright star or planet shows its name.
+- [ ] **Constellation lines.** Holding Shift draws the constellation lines around the hovered star.
 - [ ] **ISS passes.** When the space station passes over Pune, a small dot crosses the sky on its real path.
 - [ ] **Festivals.** Diwali lanterns and fireworks, Holi colour bursts, New Year fireworks at midnight IST, a few extra lit windows during Ganesh Chaturthi.
 - [ ] **Seasons.** Longer shadows and warmer light in winter, greener ground in the monsoon.

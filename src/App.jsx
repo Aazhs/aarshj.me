@@ -3,6 +3,7 @@ import { motion, useReducedMotion } from 'framer-motion';
 import PixelScene, { SpriteIcon } from './PixelScene';
 import { moodForGenre } from './music';
 import { previewTime } from './sky';
+import { fetchWeather } from './weather';
 
 const CONTACT_EMAIL = 'aarshjozhi@gmail.com';
 const CONTACT_FORM_ENDPOINT = 'https://formspree.io/f/xjglvljd';
@@ -513,7 +514,30 @@ function NowPlaying({ track }) {
   );
 }
 
-function SkyClock({ sky, track }) {
+// Pune weather, refreshed every 15 minutes.
+function useWeather() {
+  const [weather, setWeather] = useState(null);
+  useEffect(() => {
+    let active = true;
+    const load = () =>
+      fetchWeather()
+        .then((w) => {
+          if (active) setWeather(w);
+        })
+        .catch(() => {
+          // Keep the last known weather; the scene simply shows no weather effects.
+        });
+    load();
+    const id = setInterval(load, 15 * 60000);
+    return () => {
+      active = false;
+      clearInterval(id);
+    };
+  }, []);
+  return weather;
+}
+
+function SkyClock({ sky, track, weather }) {
   const [now, setNow] = useState(() => new Date());
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 1000);
@@ -532,7 +556,9 @@ function SkyClock({ sky, track }) {
   return (
     <div className="sky-clock" aria-label={`Live sky over Pune: ${sky.skyName}, ${time} IST`}>
       <p className="sky-time">{time}<small>IST</small></p>
-      <p className="sky-line">{sky.skyName} in Pune</p>
+      <p className="sky-line">
+        {sky.skyName} in Pune{weather ? `, ${weather.label.toLowerCase()}, ${weather.temp}°C` : ''}
+      </p>
       {sky.moonEvent ? <p className="sky-line sky-event">{sky.moonEvent.label}</p> : null}
       <p className="sky-line">
         {sky.phaseName}, {Math.round(sky.moonFraction * 100)}% lit{moonUp ? '' : ' (below the horizon)'}
@@ -554,6 +580,7 @@ function App() {
   const [openSlot, setOpenSlot] = useState(null);
   const [sky, setSky] = useState(null);
   const track = useNowPlaying();
+  const weather = useWeather();
 
   useEffect(() => {
     let active = true;
@@ -705,8 +732,8 @@ function App() {
 
       <main>
         <section className="hero" id="home">
-          <PixelScene onSky={setSky} music={track?.live ? track.mood : null} />
-          <SkyClock sky={sky} track={track} />
+          <PixelScene onSky={setSky} music={track?.live ? track.mood : null} weather={weather} />
+          <SkyClock sky={sky} track={track} weather={weather} />
           <div className="hero-copy">
             <h1 className="hero-title">
               <span>Aarsh</span>

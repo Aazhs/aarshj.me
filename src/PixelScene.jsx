@@ -1,7 +1,10 @@
 import { useEffect, useRef } from 'react';
 import {
-  applyPageTheme, bloodTint, milkyWayPoints, previewTime, moonColour, skyPalette, skyState, starColour, starTransform
+  applyPageTheme, bloodTint, milkyWayPoints, previewTime, moonColour, skyPalette, skyState, starColour, starTransform,
+  weatherTint
 } from './sky';
+import { NAMED_STARS, planetPositions } from './planets';
+import { benchSeat, drawProps, layoutProps, UMBRELLA, UMBRELLA_COLOURS } from './props';
 import STARS from './stars.json';
 
 // Low-res canvas scaled up with image-rendering: pixelated.
@@ -68,6 +71,20 @@ const SPRITE_ARMS = [
   '..4444..',
   '..4..4..',
   '..5..5..'
+];
+// Sitting: hips at row 8 rest on the seat, legs hang over its front edge.
+const SPRITE_SIT = [
+  '..1111..',
+  '.111111.',
+  '.122221.',
+  '.126262.',
+  '..2222..',
+  '.333333.',
+  '33333333',
+  '2.3333.2',
+  '.444444.',
+  '.....44.',
+  '.....55.'
 ];
 const NOTE = ['.11', '.1.', '.1.', '11.', '11.'];
 export const SPRITE_COLORS = { 1: '#2a1b2e', 2: '#f2c9a8', 3: '#8fd3c9', 4: '#3f2740', 5: '#1b1120', 6: '#2a1b2e' };
@@ -158,70 +175,6 @@ function drawSprite(ctx, rows, x, y, flip) {
   });
 }
 
-function drawCloud(ctx, x, y, w) {
-  ctx.fillStyle = PALETTE.cloud;
-  ctx.fillRect(x, y, w, 4);
-  ctx.fillRect(x + 4, y - 2, w - 10, 2);
-  ctx.fillRect(x + 9, y - 4, Math.max(4, w * 0.35), 2);
-  ctx.fillStyle = PALETTE.cloudLight;
-  ctx.fillRect(x + 5, y - 2, Math.max(3, w * 0.3), 1);
-}
-
-function blob(ctx, cx, cy, r) {
-  for (let y = -r; y <= r; y += 1) {
-    const half = Math.round(Math.sqrt(r * r - y * y));
-    ctx.fillRect(cx - half, cy + y, half * 2 + 1, 1);
-  }
-}
-
-// One round tree: clustered canopy, shaded away from the light.
-function drawTree(ctx, x, groundY, size) {
-  const trunkH = Math.round(size * 1.1);
-  ctx.fillStyle = PALETTE.ground;
-  ctx.fillRect(x, groundY - trunkH, 2, trunkH);
-  ctx.fillRect(x - 1, groundY - 1, 4, 1);
-  const top = groundY - trunkH - Math.round(size * 0.4);
-  const puffs = [[0, 0, 1], [-0.7, 0.35, 0.75], [0.75, 0.3, 0.8], [0.1, -0.55, 0.7]];
-  ctx.fillStyle = PALETTE.near;
-  puffs.forEach(([dx, dy, k]) => blob(ctx, x + 1 + Math.round(dx * size), top + Math.round(dy * size), Math.round(size * k)));
-  ctx.fillStyle = PALETTE.ground;
-  puffs.forEach(([dx, dy, k]) =>
-    blob(ctx, x + 2 + Math.round(dx * size + size * 0.25), top + Math.round(dy * size + size * 0.3), Math.round(size * k * 0.6))
-  );
-  ctx.fillStyle = PALETTE.rim;
-  ctx.globalAlpha = 0.18;
-  blob(ctx, x - Math.round(size * 0.3), top - Math.round(size * 0.5), Math.max(1, Math.round(size * 0.35)));
-  ctx.globalAlpha = 1;
-}
-
-function drawFence(ctx, x, groundY, length) {
-  ctx.fillStyle = PALETTE.ground;
-  for (let i = 0; i <= length; i += 6) ctx.fillRect(x + i, groundY - 6, 1, 6);
-  ctx.fillRect(x, groundY - 5, length + 1, 1);
-  ctx.fillRect(x, groundY - 3, length + 1, 1);
-}
-
-// Lamp post; its light only shows once it gets dark.
-function drawLamp(ctx, x, groundY, night) {
-  if (night > 0.05) {
-    ctx.fillStyle = PALETTE.firefly;
-    [[14, 0.06], [9, 0.08], [5, 0.12]].forEach(([r, a]) => {
-      ctx.globalAlpha = a * night;
-      blob(ctx, x, groundY - 17, r);
-    });
-    ctx.globalAlpha = 0.18 * night;
-    ctx.fillRect(x - 8, groundY, 17, 1);
-    ctx.fillRect(x - 5, groundY + 1, 11, 1);
-    ctx.globalAlpha = 1;
-  }
-  ctx.fillStyle = PALETTE.ground;
-  ctx.fillRect(x, groundY - 16, 1, 16);
-  ctx.fillRect(x - 1, groundY - 1, 3, 1);
-  ctx.fillRect(x - 1, groundY - 19, 3, 1);
-  ctx.fillStyle = night > 0.05 ? PALETTE.firefly : PALETTE.mid;
-  ctx.fillRect(x - 1, groundY - 18, 3, 2);
-}
-
 // `?time=2026-10-16T18:05+05:30` previews the sky at another moment.
 function sceneDate() {
   return previewTime() ?? new Date();
@@ -237,8 +190,12 @@ export function SpriteIcon({ rows = SPRITE_IDLE }) {
   );
 }
 
-export default function PixelScene({ onSky, music }) {
+export default function PixelScene({ onSky, music, weather }) {
   const canvasRef = useRef(null);
+  const tipRef = useRef(null);
+  const apiRef = useRef(null);
+  const weatherRef = useRef(weather);
+  weatherRef.current = weather;
   const musicRef = useRef(music);
   musicRef.current = music;
   const skyRef = useRef(onSky);
@@ -263,12 +220,25 @@ export default function PixelScene({ onSky, music }) {
 
     let sky = null;
     let night = 0;
+    // Weather: `overcast` greys the sky and hides stars, `wet` darkens and rains.
+    let wx = weatherRef.current ?? null;
+    let overcast = 0;
+    let wet = 0;
+    let propItems = [];
+    let hoverTargets = [];
+    let planets = [];
+    let drops = [];
+    let splashes = [];
+    let bolt = null;
+    let nextBolt = 0;
 
     function updateSky() {
       sky = skyState(sceneDate());
       const ev = sky.moonEvent;
       const blood = ev?.kind === 'blood' ? ev.strength : 0;
-      Object.assign(PALETTE, bloodTint(skyPalette(sky.sunAltDeg), blood * 0.85));
+      overcast = wx ? Math.min(1, wx.cloud * (wx.kind === 'clear' ? 0.6 : 1)) : 0;
+      wet = wx ? { drizzle: 0.4, rain: 0.7, storm: 1 }[wx.kind] ?? 0 : 0;
+      Object.assign(PALETTE, weatherTint(bloodTint(skyPalette(sky.sunAltDeg), blood * 0.85), overcast, wet));
       PALETTE.moonLit = moonColour(sky);
       applyPageTheme(PALETTE);
       // 0 in daylight, 1 once the sun is well below the horizon.
@@ -290,7 +260,10 @@ export default function PixelScene({ onSky, music }) {
     let notes = [];
     let userControlUntil = 0;
     const keys = new Set();
-    const player = { x: 40, y: 0, vx: 0, vy: 0, facing: 1, step: 0, grounded: true, wanderUntil: 0, target: null };
+    const player = {
+      x: 40, y: 0, vx: 0, vy: 0, facing: 1, step: 0, grounded: true, wanderUntil: 0, target: null,
+      goSit: false, sitting: false, sitUntil: 0
+    };
 
     const groundY = () => Math.round(H * 0.94);
 
@@ -309,14 +282,10 @@ export default function PixelScene({ onSky, music }) {
         near: buildRange(len, { base: H * 0.91, amp: H * 0.045, scale: 70, rough: 0.4, sharp: 1 }, rangeSeed + 3),
         pad
       };
-      bakeSky();
       const rand = seededNoise(1234);
-      clouds = Array.from({ length: Math.max(3, Math.round(W / 70)) }, (_, i) => ({
-        x: rand() * W,
-        y: Math.round(H * (0.12 + rand() * 0.28)),
-        w: Math.round(18 + rand() * 30),
-        v: 1.2 + rand() * 2.4 + i * 0.1
-      }));
+      propItems = layoutProps(W);
+      makeClouds();
+      makeRain();
       // Uneven grassy edge so the ground meets the hills naturally.
       grassEdge = Array.from({ length: W }, (_, x) => {
         const n = Math.sin(x * 0.21) + Math.sin(x * 0.07 + 2) + (rand() < 0.12 ? 1.6 : 0);
@@ -333,7 +302,90 @@ export default function PixelScene({ onSky, music }) {
       });
       player.y = groundY() - SPRITE_IDLE.length;
       player.x = Math.min(player.x, W - 10);
+      bakeSky();
     }
+
+    // More, bigger, faster clouds as cover and wind rise.
+    function makeClouds() {
+      const rand = seededNoise(777);
+      const cover = wx ? wx.cloud : 0.2;
+      const count = Math.max(3, Math.round(W / 70)) + Math.round(cover * cover * (W / 20));
+      const windy = 1 + (wx ? wx.wind : 8) / 20;
+      clouds = Array.from({ length: count }, (_, i) => {
+        const w = Math.round(18 + rand() * (30 + cover * 40));
+        return {
+          x: rand() * (W + 60) - 30,
+          y: Math.round(H * (0.04 + rand() * 0.38)),
+          w,
+          h: Math.round(w * 0.42) + 4,
+          seed: 1 + Math.floor(rand() * 1e6),
+          v: (1.2 + rand() * 2.4 + i * 0.05) * windy
+        };
+      });
+      bakeClouds();
+    }
+
+    // Each cloud is baked once per palette: overlapping round puffs on a flat
+    // base, lit on top, shaded underneath, with a dithered soft edge.
+    function bakeClouds() {
+      if (!clouds.length) return;
+      const light = mixHex(PALETTE.cloudLight, '#ffffff', 0.25 * (1 - night));
+      const body = PALETTE.cloud;
+      const shade = mixHex(PALETTE.cloud, PALETTE.skyTop, 0.35);
+      clouds.forEach((c) => {
+        const can = c.canvas || (c.canvas = document.createElement('canvas'));
+        can.width = c.w;
+        can.height = c.h;
+        const g = can.getContext('2d');
+        const rand = seededNoise(c.seed);
+        const n = 3 + Math.floor(rand() * 3);
+        const puffs = Array.from({ length: n }, (_, i) => {
+          // Biggest puff in the middle, smaller towards the ends; all fit the canvas.
+          const centre = 1 - Math.abs(i / (n - 1) - 0.5) * 2;
+          const r = Math.min((c.h - 2) / 1.75, c.h * (0.28 + 0.24 * centre + rand() * 0.08));
+          return [c.w * (0.16 + (0.68 * i) / (n - 1)) + (rand() - 0.5) * 3, c.h - 2 - r * 0.7, r];
+        });
+        for (let y = 0; y < c.h; y += 1) {
+          for (let x = 0; x < c.w; x += 1) {
+            let inside = false;
+            let rim = true;
+            let top = false;
+            puffs.forEach(([px, py, r]) => {
+              const d = Math.hypot(x + 0.5 - px, y + 0.5 - py);
+              if (d < r) {
+                inside = true;
+                if (d < r - 1) rim = false;
+                if (y + 0.5 < py - r * 0.35) top = true;
+              }
+            });
+            if (!inside || (rim && (x + y) % 2)) continue;
+            g.fillStyle = y >= c.h - 2 ? shade : top ? light : body;
+            g.fillRect(x, y, 1, 1);
+          }
+        }
+      });
+    }
+
+    function makeRain() {
+      const rate = wx ? { drizzle: 0.25, rain: 0.6, storm: 1 }[wx.kind] ?? 0 : 0;
+      const rand = seededNoise(4321);
+      drops = Array.from({ length: Math.round(W * 0.5 * rate) }, () => ({
+        x: rand() * W,
+        y: rand() * H,
+        v: wx.kind === 'drizzle' ? 55 + rand() * 25 : 100 + rand() * 60,
+        len: wx.kind === 'drizzle' ? 1 : 2 + Math.round(rand())
+      }));
+      splashes = [];
+    }
+
+    function applyWeather(next) {
+      wx = next ?? null;
+      if (!W) return;
+      makeClouds();
+      makeRain();
+      updateSky();
+    }
+    apiRef.current = { applyWeather };
 
     const skyCanvas = document.createElement('canvas');
     const skyCtx = skyCanvas.getContext('2d');
@@ -349,8 +401,54 @@ export default function PixelScene({ onSky, music }) {
       drawSun();
       drawMoon();
       ctx = real;
+      bakeClouds();
       placeStars();
       bakeMountains();
+      bakeGround();
+      bakeFog();
+    }
+
+    // Ground strip and scenery, lit for the time of day and weather.
+    const groundCanvas = document.createElement('canvas');
+    function bakeGround() {
+      groundCanvas.width = W;
+      groundCanvas.height = H;
+      const g = groundCanvas.getContext('2d');
+      const gy = groundY();
+      g.fillStyle = PALETTE.ground;
+      g.fillRect(0, gy, W, H - gy);
+      for (let x = 0; x < W; x += 1) {
+        if (grassEdge[x]) g.fillRect(x, gy - grassEdge[x], 1, grassEdge[x]);
+      }
+      const golden = Math.max(0, 1 - Math.abs(sky.sunAltDeg - 3) / 8) * (1 - overcast * 0.7);
+      drawProps(g, propItems, gy, {
+        night,
+        overcast,
+        dim: Math.max(0, Math.min(1, (8 - sky.sunAltDeg) / 20)),
+        golden,
+        wet,
+        ambient: PALETTE.near,
+        lampColour: '#ffd98a'
+      });
+    }
+
+    // Fog: a dithered band that thickens towards the ground.
+    const fogCanvas = document.createElement('canvas');
+    let fogOn = false;
+    function bakeFog() {
+      const strength = wx?.kind === 'fog' ? 1 : wet > 0 ? 0.35 : 0;
+      fogOn = strength > 0;
+      if (!fogOn) return;
+      fogCanvas.width = W;
+      fogCanvas.height = H;
+      const g = fogCanvas.getContext('2d');
+      g.fillStyle = mixHex(PALETTE.haze, '#dfe4ea', 0.45 - night * 0.3);
+      for (let y = Math.round(H * 0.5); y < H; y += 1) {
+        const density = Math.min(1, (y - H * 0.5) / (H * 0.3)) * 0.55 * strength;
+        for (let x = 0; x < W; x += 1) {
+          if (BAYER[(y & 3) * 4 + (x & 3)] < density) g.fillRect(x, y, 1, 1);
+        }
+      }
     }
 
     // Pixel-art sky gradient: blend the palette stops into many small steps,
@@ -412,9 +510,28 @@ export default function PixelScene({ onSky, music }) {
           ctx.fillRect(s.x, s.y + 1, 1, 1);
         }
       });
+      planets.forEach((p) => {
+        ctx.fillStyle = p.c;
+        ctx.globalAlpha = p.a;
+        ctx.fillRect(p.x, p.y, 1, 1);
+        if (p.mag < -1.5) {
+          ctx.globalAlpha = p.a * 0.5;
+          ctx.fillRect(p.x - 1, p.y, 1, 1);
+          ctx.fillRect(p.x + 1, p.y, 1, 1);
+          ctx.fillRect(p.x, p.y - 1, 1, 1);
+          ctx.fillRect(p.x, p.y + 1, 1, 1);
+        }
+        if (p.mag < -3.5) {
+          ctx.globalAlpha = p.a * 0.2;
+          ctx.fillRect(p.x - 2, p.y, 1, 1);
+          ctx.fillRect(p.x + 2, p.y, 1, 1);
+          ctx.fillRect(p.x, p.y - 2, 1, 1);
+          ctx.fillRect(p.x, p.y + 2, 1, 1);
+        }
+      });
       ctx.globalAlpha = 1;
 
-      if (shooting && night > 0.5) {
+      if (shooting && night > 0.5 && overcast < 0.6) {
         ctx.fillStyle = PALETTE.moon;
         for (let i = 0; i < 8; i += 1) {
           ctx.globalAlpha = 1 - i / 8;
@@ -437,12 +554,37 @@ export default function PixelScene({ onSky, music }) {
 
     function placeStars() {
       stars = [];
+      planets = [];
+      hoverTargets = [];
       if (night <= 0.02) return;
       const tf = starTransform(sceneDate());
       const blood = sky.moonEvent?.kind === 'blood';
       const glare = sky.moon.altitude > 0 && !blood ? sky.moonFraction * 1.6 : 0;
-      // Naked-eye limit: about magnitude 5 on a dark night, less with a bright moon.
-      const limit = night * 5 - glare;
+      // Naked-eye limit: about magnitude 5 on a dark night, less with a bright moon or cloud.
+      const limit = night * 5 - glare - overcast * 4.5;
+      const clear = Math.max(0, 1 - overcast * 1.1);
+      // Planets: real positions, steady light (planets don't twinkle).
+      if (clear > 0.1) {
+        planetPositions(sceneDate()).forEach((pl) => {
+          const pos = skyXY(tf(pl.ra, pl.dec));
+          if (pos.alt < 1 || pos.alt > SKY_TOP_ALT || pos.x < 0 || pos.x >= W) return;
+          // Venus and Mercury show in twilight; the rest need a darker sky.
+          const need = pl.mag < -3 ? 0.04 : 0.15;
+          if (night < need) return;
+          const a = Math.min(1, (night - need) * 3 + 0.4) * Math.min(1, pos.alt / 6) * clear;
+          const p = { x: Math.round(pos.x), y: Math.round(pos.y), a, c: pl.colour, mag: pl.mag };
+          planets.push(p);
+          hoverTargets.push({ x: p.x, y: p.y, name: pl.name, kind: 'Planet' });
+        });
+        // Named bright stars, for hover labels only (they are drawn with the rest).
+        if (limit > 1.5) {
+          NAMED_STARS.forEach(([name, ra, dec]) => {
+            const pos = skyXY(tf(ra, dec));
+            if (pos.alt < 3 || pos.alt > SKY_TOP_ALT || pos.x < 0 || pos.x >= W) return;
+            hoverTargets.push({ x: Math.round(pos.x), y: Math.round(pos.y), name, kind: 'Star' });
+          });
+        }
+      }
       for (const [ra, dec, mag, bv] of STARS) {
         if (mag > limit) break;
         const pos = skyXY(tf(ra, dec));
@@ -468,7 +610,7 @@ export default function PixelScene({ onSky, music }) {
     function drawMilkyWay() {
       const blood = sky.moonEvent?.kind === 'blood';
       const moonWash = sky.moon.altitude > 0 && !blood ? sky.moonFraction * 0.9 : 0;
-      const strength = night ** 2 * (1 - moonWash);
+      const strength = night ** 2 * (1 - moonWash) * Math.max(0, 1 - overcast * 1.3);
       if (strength < 0.05) return;
       const tf = starTransform(sceneDate());
       ctx.fillStyle = '#d9d2ff';
@@ -504,13 +646,15 @@ export default function PixelScene({ onSky, music }) {
       const low = Math.max(0, Math.min(1, 1 - sky.sunAltDeg / 12));
       const r = Math.round(Math.min(W, H) * (0.07 + 0.03 * low));
       const core = low > 0.5 ? '#ffd9a0' : '#fff6e3';
+      const veil = Math.max(0.15, 1 - Math.max(0, overcast - 0.5) * 1.7);
       // Stepped glow rings.
       [[r + 6, 0.12], [r + 3, 0.22]].forEach(([rr, a]) => {
-        ctx.globalAlpha = a;
+        ctx.globalAlpha = a * veil;
         disc(x, y, rr, () => PALETTE.haze);
       });
-      ctx.globalAlpha = 1;
+      ctx.globalAlpha = veil;
       disc(x, y, r, () => core);
+      ctx.globalAlpha = 1;
     }
 
     function drawMoon() {
@@ -530,7 +674,7 @@ export default function PixelScene({ onSky, music }) {
       const k = Math.cos(2 * Math.PI * sky.moonPhase);
       const waxing = sky.moonPhase < 0.5;
       const dark = night > 0.3 ? 'rgba(90, 84, 130, 0.3)' : null;
-      ctx.globalAlpha = 0.55 + 0.45 * night;
+      ctx.globalAlpha = (0.55 + 0.45 * night) * Math.max(0.15, 1 - Math.max(0, overcast - 0.5) * 1.7);
       disc(x, y, r, (nx, ny) => {
         const lit = waxing ? nx > k : nx < -k;
         if (!lit) return dark;
@@ -593,17 +737,75 @@ export default function PixelScene({ onSky, music }) {
     }
 
     function drawGround() {
+      ctx.drawImage(groundCanvas, 0, 0);
+    }
+
+    function updateRain(dt, t) {
+      if (!drops.length) return;
       const gy = groundY();
-      ctx.fillStyle = PALETTE.ground;
-      ctx.fillRect(0, gy, W, H - gy);
-      ctx.fillStyle = PALETTE.ground;
-      for (let x = 0; x < W; x += 1) {
-        if (grassEdge[x]) ctx.fillRect(x, gy - grassEdge[x], 1, grassEdge[x]);
+      const slant = (wx?.wind ?? 0) / 60;
+      drops.forEach((d) => {
+        d.y += d.v * dt;
+        d.x += d.v * dt * slant;
+        if (d.y >= gy) {
+          if (splashes.length < 60) splashes.push({ x: Math.round(d.x), life: 0.14 });
+          d.y = -Math.random() * 20;
+          d.x = Math.random() * (W + 20) - 20;
+        }
+      });
+      splashes.forEach((sp) => {
+        sp.life -= dt;
+      });
+      splashes = splashes.filter((sp) => sp.life > 0);
+      // Lightning in storms: a quick bolt with a faint sky flash.
+      if (wx?.kind === 'storm' && !reduceMotion) {
+        if (!nextBolt) nextBolt = t + 4000 + Math.random() * 8000;
+        if (t > nextBolt) {
+          const path = [[Math.round(W * (0.15 + Math.random() * 0.7)), Math.round(H * 0.06)]];
+          while (path.at(-1)[1] < H * 0.6) {
+            const [px, py] = path.at(-1);
+            path.push([px + Math.round(Math.random() * 8 - 4), py + 3 + Math.round(Math.random() * 4)]);
+          }
+          bolt = { path, life: 0.2 };
+          nextBolt = t + 5000 + Math.random() * 12000;
+        }
+        if (bolt) {
+          bolt.life -= dt;
+          if (bolt.life <= 0) bolt = null;
+        }
       }
-      const unit = Math.max(4, Math.round(Math.min(W, H) * 0.045));
-      drawLamp(ctx, Math.round(W * 0.6), gy, night);
-      drawFence(ctx, Math.round(W * 0.86), gy, Math.min(36, Math.round(W * 0.1)));
-      drawTree(ctx, Math.round(W * 0.76), gy, unit);
+    }
+
+    function drawRain() {
+      if (bolt) {
+        ctx.globalAlpha = 0.12 * (bolt.life / 0.2);
+        ctx.fillStyle = '#e8ecff';
+        ctx.fillRect(0, 0, W, H);
+        ctx.globalAlpha = Math.min(1, bolt.life * 8);
+        ctx.fillStyle = '#f4f1ff';
+        for (let i = 1; i < bolt.path.length; i += 1) {
+          const [x0, y0] = bolt.path[i - 1];
+          const [x1, y1] = bolt.path[i];
+          const n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0));
+          for (let k = 0; k <= n; k += 1) {
+            ctx.fillRect(Math.round(x0 + ((x1 - x0) * k) / n), Math.round(y0 + ((y1 - y0) * k) / n), 1, 1);
+          }
+        }
+      }
+      if (!drops.length) {
+        ctx.globalAlpha = 1;
+        return;
+      }
+      const gy = groundY();
+      ctx.fillStyle = '#c4d2e6';
+      ctx.globalAlpha = 0.38 - night * 0.12;
+      drops.forEach((d) => ctx.fillRect(Math.round(d.x), Math.round(d.y), 1, d.len));
+      splashes.forEach((sp) => {
+        ctx.globalAlpha = (sp.life / 0.14) * 0.5;
+        ctx.fillRect(sp.x - 1, gy - 1, 1, 1);
+        ctx.fillRect(sp.x + 1, gy - 1, 1, 1);
+      });
+      ctx.globalAlpha = 1;
     }
 
     function updateBeat(dt, t) {
@@ -671,8 +873,24 @@ export default function PixelScene({ onSky, music }) {
       ctx.globalAlpha = 1;
     }
 
+    function standUp() {
+      player.sitting = false;
+      player.goSit = false;
+    }
+
     function updatePlayer(dt, t) {
       const mood = musicRef.current;
+      // Sitting on the bench: stays put until the time is up, music starts, or you take over.
+      if (player.sitting) {
+        if (t > player.sitUntil || mood || keys.size || t < userControlUntil) {
+          standUp();
+          player.y = groundY() - SPRITE_IDLE.length;
+          player.wanderUntil = t + 1500;
+        } else {
+          player.vx = 0;
+          return;
+        }
+      }
       // With music on it strolls around the screen, a little quicker for energetic songs.
       const speed = mood ? 16 + mood.energy * 10 : 34;
       let dir = 0;
@@ -681,8 +899,18 @@ export default function PixelScene({ onSky, music }) {
 
       if (dir === 0 && player.target !== null) {
         const dx = player.target - player.x;
-        if (Math.abs(dx) < 1.5) player.target = null;
-        else dir = Math.sign(dx);
+        if (Math.abs(dx) < 1.5) {
+          player.target = null;
+          const seat = benchSeat(propItems, groundY());
+          if (player.goSit && seat && player.grounded) {
+            player.sitting = true;
+            player.goSit = false;
+            player.x = seat.x;
+            player.y = seat.seatY - 9;
+            player.sitUntil = t + 6000 + Math.random() * 8000;
+            return;
+          }
+        } else dir = Math.sign(dx);
       }
 
       // Wander on its own when nobody is playing.
@@ -692,7 +920,15 @@ export default function PixelScene({ onSky, music }) {
         player.target = Math.random() < 0.2 ? null : far;
         player.wanderUntil = t + 3000 + Math.random() * 3000;
       } else if (!mood && dir === 0 && player.target === null && t > player.wanderUntil) {
-        player.target = Math.random() < 0.5 ? null : 8 + Math.random() * (W - 20);
+        const seat = benchSeat(propItems, groundY());
+        // Now and then, wander over to the bench for a rest.
+        if (seat && t > userControlUntil && Math.random() < 0.25) {
+          player.target = seat.x;
+          player.goSit = true;
+        } else {
+          player.target = Math.random() < 0.5 ? null : 8 + Math.random() * (W - 20);
+          player.goSit = false;
+        }
         player.wanderUntil = t + 2500 + Math.random() * 4000;
       }
 
@@ -712,6 +948,10 @@ export default function PixelScene({ onSky, music }) {
     }
 
     function jump() {
+      if (player.sitting) {
+        standUp();
+        player.y = groundY() - SPRITE_IDLE.length;
+      }
       if (player.grounded) {
         player.vy = -78;
         player.grounded = false;
@@ -723,14 +963,26 @@ export default function PixelScene({ onSky, music }) {
       const moving = player.vx !== 0;
       let rows = moving && player.grounded && Math.floor(player.step) % 2 === 1 ? SPRITE_WALK : SPRITE_IDLE;
       let bob = 0;
-      if (mood && !moving) {
+      if (player.sitting) rows = SPRITE_SIT;
+      else if (mood && !moving) {
         if (mood.name === 'hype') rows = beat.index % 2 === 0 ? SPRITE_ARMS : SPRITE_WALK;
         if (mood.name === 'pop') rows = beat.index % 2 === 0 ? SPRITE_WALK : SPRITE_ARMS;
         // Chill and calm: head-bob on the beat, slower for calm.
         if (mood.name === 'chill') bob = beat.pulse > 0.6 ? 1 : 0;
         if (mood.name === 'calm') bob = beat.index % 2 === 0 && beat.pulse > 0.5 ? 1 : 0;
       }
-      drawSprite(ctx, rows, Math.round(player.x), Math.round(player.y) + bob, player.facing < 0);
+      const px = Math.round(player.x);
+      const py = Math.round(player.y) + bob;
+      drawSprite(ctx, rows, px, py, player.facing < 0);
+      if (wet > 0) {
+        UMBRELLA.forEach((row, ry) => {
+          for (let rx = 0; rx < row.length; rx += 1) {
+            if (row[rx] === '.') continue;
+            ctx.fillStyle = UMBRELLA_COLOURS[row[rx]];
+            ctx.fillRect(px - 1 + rx, py - UMBRELLA.length + ry, 1, 1);
+          }
+        });
+      }
     }
 
     function updateFlies(dt, t) {
@@ -766,7 +1018,7 @@ export default function PixelScene({ onSky, music }) {
 
     function drawFlies(t) {
       flies.forEach((f) => {
-        const glow = Math.max(Math.min(1, night * 1.5), beat.mix * 0.7);
+        const glow = Math.max(Math.min(1, night * 1.5), beat.mix * 0.7) * (1 - wet * 0.8);
         const flicker = 0.45 + 0.55 * Math.abs(Math.sin(t * 0.003 + f.p));
         ctx.globalAlpha = Math.min(1, glow * (flicker * (1 - beat.mix * 0.5) + beat.pulse * beat.mix * 0.6));
         ctx.fillStyle = PALETTE.firefly;
@@ -801,17 +1053,25 @@ export default function PixelScene({ onSky, music }) {
 
       updatePlayer(dt, t);
       updateFlies(dt, t);
+      updateRain(dt, t);
 
       drawSky(t);
-      clouds.forEach((c) => drawCloud(ctx, Math.round(c.x), c.y, c.w));
+      clouds.forEach((c) => c.canvas && ctx.drawImage(c.canvas, Math.round(c.x), c.y));
       drawRange('far', 0.2);
       drawRange('peak', 0.4);
+      if (fogOn) ctx.drawImage(fogCanvas, 0, 0);
       drawRange('mid', 0.7);
       drawRange('near', 1);
+      if (fogOn) {
+        ctx.globalAlpha = 0.5;
+        ctx.drawImage(fogCanvas, 0, 0);
+        ctx.globalAlpha = 1;
+      }
       drawGround();
       drawPlayer();
       drawNotes();
       drawFlies(t);
+      drawRain();
 
       if (visible && !reduceMotion) raf = requestAnimationFrame(frame);
     }
@@ -842,14 +1102,43 @@ export default function PixelScene({ onSky, music }) {
       pointer.x = (e.clientX - rect.left) / rect.width;
       pointer.y = (e.clientY - rect.top) / rect.height;
       pointer.active = pointer.y >= 0 && pointer.y <= 1;
+      showTip();
     };
+
+    // Planet and bright-star names on hover.
+    function showTip() {
+      const tip = tipRef.current;
+      if (!tip) return;
+      const lx = pointer.x * W;
+      const ly = pointer.y * H;
+      let best = null;
+      let bestD = 4;
+      hoverTargets.forEach((target) => {
+        const d = Math.hypot(target.x - lx, target.y - ly);
+        if (d < bestD) {
+          bestD = d;
+          best = target;
+        }
+      });
+      if (!best || !pointer.active) {
+        tip.hidden = true;
+        return;
+      }
+      tip.firstChild.textContent = best.name;
+      tip.lastChild.textContent = best.kind;
+      tip.style.left = `${best.x * PIXEL + 12}px`;
+      tip.style.top = `${best.y * PIXEL - 10}px`;
+      tip.hidden = false;
+    }
     const onLeave = () => {
       pointer.active = false;
+      if (tipRef.current) tipRef.current.hidden = true;
     };
     const onClick = (e) => {
       if (e.target.closest('a, button, input, textarea')) return;
       const rect = canvas.getBoundingClientRect();
       if (e.clientY < rect.top || e.clientY > rect.bottom) return;
+      standUp();
       player.target = ((e.clientX - rect.left) / rect.width) * W - 4;
       player.wanderUntil = performance.now() + 8000;
       userControlUntil = performance.now() + 3000;
@@ -865,6 +1154,7 @@ export default function PixelScene({ onSky, music }) {
         keys.add(k);
         userControlUntil = performance.now() + 3000;
         player.target = null;
+        player.goSit = false;
         player.wanderUntil = performance.now() + 8000;
       }
       if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') {
@@ -887,6 +1177,7 @@ export default function PixelScene({ onSky, music }) {
     return () => {
       cancelAnimationFrame(raf);
       clearInterval(skyTimer);
+      apiRef.current = null;
       resize.disconnect();
       io.disconnect();
       host.removeEventListener('pointermove', onPointer);
@@ -897,5 +1188,17 @@ export default function PixelScene({ onSky, music }) {
     };
   }, []);
 
-  return <canvas ref={canvasRef} className="pixel-scene" aria-hidden="true" />;
+  useEffect(() => {
+    apiRef.current?.applyWeather(weather);
+  }, [weather]);
+
+  return (
+    <>
+      <canvas ref={canvasRef} className="pixel-scene" aria-hidden="true" />
+      <div ref={tipRef} className="sky-tip" hidden>
+        <strong />
+        <span />
+      </div>
+    </>
+  );
 }

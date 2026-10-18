@@ -341,3 +341,20 @@ export function starColour(bv) {
   if (bv < 1.0) return '#ffe1b0';
   return '#ffc48e';
 }
+
+// Weather on the palette: cloud cover (0..1) greys the sky and land out,
+// rain (0..1) darkens them. The sky and clouds change most.
+export function weatherTint(palette, overcast, wet) {
+  if (overcast <= 0 && wet <= 0) return palette;
+  const out = { ...palette };
+  ['skyTop', 'sky', 'skyLow', 'haze', 'cloud', 'cloudLight', 'far', 'peak', 'peakShade', 'mid', 'near', 'ground'].forEach((key) => {
+    if (!out[key]) return;
+    const c = hexToRgb(out[key]);
+    const lum = 0.3 * c[0] + 0.59 * c[1] + 0.11 * c[2];
+    const airy = key.startsWith('sky') || key === 'haze' || key.startsWith('cloud');
+    const grey = overcast * (airy ? 0.55 : 0.3);
+    const dark = 1 - wet * (airy ? 0.2 : 0.12);
+    out[key] = rgbToHex(c.map((v) => (v + (lum - v) * grey) * dark));
+  });
+  return out;
+}
