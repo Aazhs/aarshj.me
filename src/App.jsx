@@ -561,6 +561,9 @@ function SkyClock({ sky, track, weather }) {
         {sky.skyName} in Pune{weather ? `, ${weather.label.toLowerCase()}, ${weather.temp}°C` : ''}
       </p>
       {sky.moonEvent ? <p className="sky-line sky-event">{sky.moonEvent.label}</p> : null}
+      {sky.shower ? <p className="sky-line sky-event">{sky.shower.name} meteor shower</p> : null}
+      {sky.issUp ? <p className="sky-line sky-event">Space station overhead, click it to watch live</p> : null}
+      {sky.horror ? <p className="sky-line sky-horror">don&apos;t close the tab</p> : null}
       <p className="sky-line">
         {sky.phaseName}, {Math.round(sky.moonFraction * 100)}% lit{moonUp ? '' : ' (below the horizon)'}
       </p>

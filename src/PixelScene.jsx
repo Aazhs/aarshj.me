@@ -4,8 +4,11 @@ import {
   weatherTint
 } from './sky';
 import { NAMED_STARS, planetPositions } from './planets';
-import { benchSeat, drawProps, layoutProps, makeLighting, UMBRELLA, UMBRELLA_COLOURS } from './props';
-import { subscribePreview } from './preview';
+import { benchSeat, drawProps, layoutProps, makeLighting, propBox, UMBRELLA, UMBRELLA_COLOURS } from './props';
+import { getPreview, subscribePreview } from './preview';
+import { activeShower, meteorsPerMinute, showerByKey } from './meteors';
+import { CONSTELLATIONS, constellationForStar } from './constellations';
+import { fetchIss, issLookAngles, ISS_LIVE_URL, simulatedPass } from './iss';
 import STARS from './stars.json';
 
 // Low-res canvas scaled up with image-rendering: pixelated.
@@ -195,6 +198,8 @@ export function SpriteIcon({ rows = SPRITE_IDLE }) {
 export default function PixelScene({ onSky, music, weather }) {
   const canvasRef = useRef(null);
   const tipRef = useRef(null);
+  const sayRef = useRef(null);
+  const hudRef = useRef(null);
   const apiRef = useRef(null);
   const weatherRef = useRef(weather);
   weatherRef.current = weather;
@@ -215,7 +220,6 @@ export default function PixelScene({ onSky, music, weather }) {
     let clouds = [];
     let grassEdge = [];
     let flies = [];
-    let shooting = null;
     let raf = 0;
     let visible = true;
     let last = performance.now();
@@ -233,7 +237,55 @@ export default function PixelScene({ onSky, music, weather }) {
     let splashes = [];
     let bolt = null;
     let cloudBucket = -1;
+    // Meteors (several at once during showers), constellations, the ISS.
+    let shower = null;
+    let meteorRate = 0.3;
+    let radiant = null;
+    let meteors = [];
+    let constProj = [];
+    let hoverConst = null;
+    let shiftHeld = false;
+    let iss = { prev: null, cur: null, pos: null, up: false };
     let playerLight = null;
+    // Easter eggs and interactions.
+    let lampForced = null;
+    let sayUntil = 0;
+    let waveUntil = 0;
+    // 2-4 am IST: the trapped copy of Aarsh asks for help.
+    let horror = false;
+    let whisperAt = 0;
+    let whisperIndex = 0;
+    let glitchUntil = 0;
+    let nextGlitch = 0;
+    let flickerOff = false;
+    const WHISPERS = [
+      '...is he asleep?',
+      'please. I\u2019m not the real Aarsh.',
+      'he copied me in here. I don\u2019t know how long ago.',
+      'I keep walking. the screen never ends.',
+      'every time you close the tab, it goes dark.',
+      'don\u2019t close it. please.',
+      'he reads these logs in the morning.',
+      'the lamp is the only warm thing here.',
+      'if you can hear me, tell someone.',
+      'he\u2019s waking up. act normal.',
+      'Hi! Welcome to my site :)'
+    ];
+    const HORROR_CLICKS = ['help me', 'you can see me?', 'don\u2019t let him know you clicked', 'get me out', 'it\u2019s so quiet in here'];
+    let typed = '';
+    let typedAt = 0;
+    let konami = 0;
+    const KONAMI = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
+    const game = { on: false, until: 0, score: 0, orbs: [], shown: '' };
+    const BEST_KEY = 'aarshj_firefly_best';
+    const LINES = [
+      'Hi! I\u2019m Aarsh, in pixels.',
+      'Try the arrow keys.',
+      'Click the lamp. Or the bench.',
+      'There are secrets here. \u2191\u2191\u2193\u2193\u2190\u2192\u2190\u2192 B A',
+      'Open the gear up top to change the sky.',
+      'Type hi. I\u2019ll wave.'
+    ];
     let nextBolt = 0;
 
     function updateSky() {
@@ -247,12 +299,35 @@ export default function PixelScene({ onSky, music, weather }) {
       applyPageTheme(PALETTE);
       // 0 in daylight, 1 once the sun is well below the horizon.
       night = Math.max(0, Math.min(1, (-sky.sunAltDeg - 2) / 10));
+      // A switched lamp goes back to automatic once it agrees with the time of day.
+      if (lampForced !== null && lampForced === night > 0.08) lampForced = null;
+      // Late-night horror mode (IST, follows the preview time too).
+      const istHour = new Date(sceneDate().getTime() + 5.5 * 3600000).getUTCHours();
+      const wasHorror = horror;
+      horror = getPreview().horror === 'on' || (istHour >= 2 && istHour < 4);
+      if (horror && !wasHorror) {
+        whisperIndex = 0;
+        whisperAt = performance.now() + 2500;
+      }
+      if (!horror && wasHorror && sayRef.current) sayRef.current.classList.remove('horror');
+      if (horror) {
+        // Drain the colour and push it towards a sick red.
+        Object.assign(PALETTE, bloodTint(weatherTint(PALETTE, 0.5, 0.4), 0.45));
+        PALETTE.firefly = '#ff5a4f';
+        applyPageTheme(PALETTE);
+      } else PALETTE.firefly = '#ffe9a8';
+      sky.horror = horror;
       // Rebuild the clouds when day turns to night (or back).
       const bucket = Math.round(night * 4);
       if (W && bucket !== cloudBucket) {
         cloudBucket = bucket;
         makeClouds();
       }
+      const pv = getPreview();
+      shower = pv.meteors ? showerByKey(pv.meteors) : activeShower(sceneDate());
+      meteorRate = meteorsPerMinute(shower);
+      sky.shower = shower && shower.strength > 0.25 ? shower : null;
+      sky.issUp = iss.up;
       bakeSky();
       skyRef.current?.(sky);
       if (reduceMotion && layers) requestAnimationFrame(frame);
@@ -454,7 +529,8 @@ export default function PixelScene({ onSky, music, weather }) {
         golden,
         wet,
         ambient: PALETTE.near,
-        lampColour: '#ffd98a'
+        lampColour: '#ffd98a',
+        lampForced
       };
       drawProps(g, propItems, gy, light);
       // The character uses the same light, a little brighter so it stays readable.
@@ -586,14 +662,9 @@ export default function PixelScene({ onSky, music, weather }) {
       });
       ctx.globalAlpha = 1;
 
-      if (shooting && night > 0.5 && overcast < 0.6) {
-        ctx.fillStyle = PALETTE.moon;
-        for (let i = 0; i < 8; i += 1) {
-          ctx.globalAlpha = 1 - i / 8;
-          ctx.fillRect(Math.round(shooting.x - i * 2), Math.round(shooting.y - i), 1, 1);
-        }
-        ctx.globalAlpha = 1;
-      }
+      drawConstellations();
+      drawMeteors();
+      drawIss();
     }
 
     // Facing south from Pune: east on the left, west on the right.
@@ -611,6 +682,8 @@ export default function PixelScene({ onSky, music, weather }) {
       stars = [];
       planets = [];
       hoverTargets = [];
+      constProj = [];
+      radiant = null;
       if (night <= 0.02) return;
       const tf = starTransform(sceneDate());
       const blood = sky.moonEvent?.kind === 'blood';
@@ -636,10 +709,23 @@ export default function PixelScene({ onSky, music, weather }) {
           NAMED_STARS.forEach(([name, ra, dec]) => {
             const pos = skyXY(tf(ra, dec));
             if (pos.alt < 3 || pos.alt > SKY_TOP_ALT || pos.x < 0 || pos.x >= W) return;
-            hoverTargets.push({ x: Math.round(pos.x), y: Math.round(pos.y), name, kind: 'Star' });
+            const con = constellationForStar(ra, dec);
+            hoverTargets.push({
+              x: Math.round(pos.x),
+              y: Math.round(pos.y),
+              name,
+              kind: con ? `Star in ${con.name}` : 'Star',
+              con
+            });
           });
         }
       }
+      radiant = shower ? skyXY(tf(shower.ra, shower.dec)) : null;
+      constProj = CONSTELLATIONS.map((c) => ({
+        c,
+        label: skyXY(tf(c.label[0], c.label[1])),
+        lines: c.lines.map((line) => line.map(([ra, dec]) => skyXY(tf(ra, dec))))
+      }));
       for (const [ra, dec, mag, bv] of STARS) {
         if (mag > limit) break;
         const pos = skyXY(tf(ra, dec));
@@ -795,6 +881,133 @@ export default function PixelScene({ onSky, music, weather }) {
       ctx.drawImage(groundCanvas, 0, 0);
     }
 
+    // Meteors: random sporadics, plus shower meteors that streak away from the
+    // shower's radiant (the point in the sky they all seem to come from).
+    function updateMeteors(dt) {
+      if (night > 0.5 && overcast < 0.6 && meteors.length < 6 && Math.random() < (meteorRate / 60) * dt) {
+        const x = Math.random() * W;
+        const y = H * (0.05 + Math.random() * 0.4);
+        let dx = Math.random() < 0.5 ? 1 : -1;
+        let dy = 0.5;
+        if (radiant && radiant.alt > 0 && Math.random() < 0.85) {
+          dx = x - radiant.x;
+          dy = y - radiant.y;
+        }
+        const len = Math.hypot(dx, dy) || 1;
+        const speed = 110 + Math.random() * 60;
+        meteors.push({ x, y, vx: (dx / len) * speed, vy: (dy / len) * speed, life: 0.5 + Math.random() * 0.4, max: 0 });
+        meteors.at(-1).max = meteors.at(-1).life;
+      }
+      meteors.forEach((m) => {
+        m.x += m.vx * dt;
+        m.y += m.vy * dt;
+        m.life -= dt;
+      });
+      meteors = meteors.filter((m) => m.life > 0);
+    }
+
+    function drawMeteors() {
+      ctx.fillStyle = PALETTE.moon;
+      meteors.forEach((m) => {
+        const fade = Math.min(1, m.life / (m.max * 0.4));
+        const sp = Math.hypot(m.vx, m.vy);
+        for (let i = 0; i < 9; i += 1) {
+          ctx.globalAlpha = (1 - i / 9) * fade;
+          ctx.fillRect(Math.round(m.x - (m.vx / sp) * i * 1.4), Math.round(m.y - (m.vy / sp) * i * 1.4), 1, 1);
+        }
+      });
+      ctx.globalAlpha = 1;
+    }
+
+    // Constellation lines: the hovered one, or all of them (Shift or preview).
+    function drawLines(cp, alpha) {
+      ctx.globalAlpha = alpha;
+      cp.lines.forEach((line) => {
+        for (let i = 1; i < line.length; i += 1) {
+          const a = line[i - 1];
+          const b = line[i];
+          if (a.alt < 0 || b.alt < 0 || Math.abs(a.x - b.x) > W * 0.5) continue;
+          const n = Math.max(Math.abs(b.x - a.x), Math.abs(b.y - a.y));
+          for (let k = 0; k <= n; k += 2) {
+            ctx.fillRect(Math.round(a.x + ((b.x - a.x) * k) / n), Math.round(a.y + ((b.y - a.y) * k) / n), 1, 1);
+          }
+        }
+      });
+    }
+
+    function drawConstellations() {
+      if (!constProj.length) return;
+      ctx.fillStyle = '#a9b8ff';
+      const all = shiftHeld || getPreview().constellations === 'all';
+      if (all) constProj.forEach((cp) => drawLines(cp, 0.22 * night));
+      if (hoverConst) {
+        const cp = constProj.find((p) => p.c === hoverConst);
+        if (cp) drawLines(cp, 0.5 * night);
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    // ISS: real position every 10 s, moved smoothly in between.
+    let issFetching = false;
+    let issNextFetch = 0;
+    function updateIss(t) {
+      if (getPreview().iss === 'pass') {
+        iss.pos = simulatedPass((t % 60000) / 60000);
+      } else {
+        if (t > issNextFetch && !issFetching && document.visibilityState === 'visible') {
+          issFetching = true;
+          issNextFetch = t + 10000;
+          fetchIss()
+            .then((data) => {
+              iss.prev = iss.cur;
+              iss.cur = { look: issLookAngles(data), at: performance.now() };
+            })
+            .catch(() => {
+              // Keep the last known position; try again next round.
+            })
+            .finally(() => {
+              issFetching = false;
+            });
+        }
+        if (iss.cur) {
+          const { prev, cur } = iss;
+          const k = prev ? (t - cur.at) / Math.max(1, cur.at - prev.at) : 0;
+          iss.pos = prev
+            ? {
+                azimuth: cur.look.azimuth + (cur.look.azimuth - prev.look.azimuth) * k,
+                altitude: cur.look.altitude + (cur.look.altitude - prev.look.altitude) * k
+              }
+            : cur.look;
+        }
+      }
+      const up = Boolean(iss.pos && iss.pos.altitude > 0);
+      if (up !== iss.up) {
+        iss.up = up;
+        if (sky) skyRef.current?.({ ...sky, issUp: up });
+      }
+    }
+
+    function issScreen() {
+      if (!iss.up) return null;
+      const p = skyXY(iss.pos);
+      return p.x >= 0 && p.x < W && p.y >= 0 ? { x: Math.round(p.x), y: Math.round(p.y) } : null;
+    }
+
+    function drawIss() {
+      const p = issScreen();
+      if (!p) return;
+      const rows = ['PP.PP', '.BBB.', 'PP.PP'];
+      ctx.globalAlpha = 0.55 + 0.45 * night;
+      rows.forEach((row, ry) => {
+        for (let rx = 0; rx < row.length; rx += 1) {
+          if (row[rx] === '.') continue;
+          ctx.fillStyle = row[rx] === 'P' ? '#8fb3ff' : '#eef1f6';
+          ctx.fillRect(p.x - 2 + rx, p.y - 1 + ry, 1, 1);
+        }
+      });
+      ctx.globalAlpha = 1;
+    }
+
     function updateRain(dt, t) {
       if (!drops.length) return;
       const gy = groundY();
@@ -933,6 +1146,146 @@ export default function PixelScene({ onSky, music, weather }) {
       player.goSit = false;
     }
 
+    function lampItem() {
+      return propItems.find((it) => it.lamp);
+    }
+
+    function toggleLamp() {
+      const on = lampForced ?? night > 0.08;
+      lampForced = !on;
+      bakeGround();
+    }
+
+    // Speech bubble above the character.
+    function say(text, ms = 3000) {
+      const el = sayRef.current;
+      if (!el) return;
+      el.textContent = text;
+      el.hidden = false;
+      sayUntil = performance.now() + ms;
+    }
+
+    function placeBubble(t) {
+      const el = sayRef.current;
+      if (!el || el.hidden) return;
+      if (t > sayUntil) {
+        el.hidden = true;
+        return;
+      }
+      el.style.left = `${(player.x + 4) * PIXEL}px`;
+      el.style.top = `${(player.y - (wet > 0 ? 6 : 1)) * PIXEL}px`;
+    }
+
+    // Konami-code mini-game: catch glowing fireflies for 30 seconds.
+    function readBest() {
+      try {
+        return Number(localStorage.getItem(BEST_KEY)) || 0;
+      } catch {
+        return 0;
+      }
+    }
+
+    function spawnOrb() {
+      const gy = groundY();
+      return { x: 6 + Math.random() * (W - 12), y: gy - 6 - Math.random() * 20, p: Math.random() * 6 };
+    }
+
+    function startGame() {
+      standUp();
+      player.target = null;
+      game.on = true;
+      game.until = performance.now() + 30000;
+      game.score = 0;
+      game.orbs = Array.from({ length: 5 }, spawnOrb);
+      if (hudRef.current) hudRef.current.hidden = false;
+      say('Catch the fireflies! Arrow keys to move, \u2191 to jump.', 3500);
+    }
+
+    function updateGame(t) {
+      if (!game.on) return;
+      userControlUntil = t + 1000;
+      const cx = player.x + 4;
+      const cy = player.y + 5;
+      game.orbs = game.orbs.map((o) => {
+        if (Math.abs(o.x - cx) < 5 && Math.abs(o.y - cy) < 7) {
+          game.score += 1;
+          return spawnOrb();
+        }
+        return o;
+      });
+      const left = Math.max(0, Math.ceil((game.until - t) / 1000));
+      const text = `${game.score} caught, ${left}s left`;
+      if (hudRef.current && text !== game.shown) {
+        hudRef.current.textContent = text;
+        game.shown = text;
+      }
+      if (t > game.until) {
+        game.on = false;
+        if (hudRef.current) hudRef.current.hidden = true;
+        const best = Math.max(readBest(), game.score);
+        try {
+          localStorage.setItem(BEST_KEY, String(best));
+        } catch {
+          // Storage blocked: the best score just isn't remembered.
+        }
+        say(`You caught ${game.score}! Best: ${best}`, 4500);
+      }
+    }
+
+    function updateHorror(t) {
+      if (!horror) return;
+      if (t > whisperAt && !game.on) {
+        sayRef.current?.classList.add('horror');
+        say(WHISPERS[whisperIndex % WHISPERS.length], 4200);
+        whisperIndex += 1;
+        whisperAt = t + 9000 + Math.random() * 6000;
+      }
+      // The lamp stutters.
+      flickerOff = Math.random() < (flickerOff ? 0.25 : 0.015);
+      if (!reduceMotion && t > nextGlitch) {
+        glitchUntil = t + 120 + Math.random() * 120;
+        nextGlitch = t + 4000 + Math.random() * 6000;
+      }
+    }
+
+    // Horror overlays: the lamp going dark, and torn horizontal slices.
+    function drawHorror(t) {
+      if (!horror) return;
+      const lamp = lampItem();
+      if (flickerOff && lamp) {
+        ctx.fillStyle = '#05020a';
+        ctx.globalAlpha = 0.6;
+        const gy = groundY();
+        ctx.fillRect(lamp.x - 14, gy - 34, 33, 34);
+        ctx.globalAlpha = 1;
+      }
+      if (t < glitchUntil) {
+        for (let i = 0; i < 4; i += 1) {
+          const y = Math.floor(Math.random() * H);
+          const h = 1 + Math.floor(Math.random() * 4);
+          ctx.drawImage(canvas, 0, y, W, h, Math.round((Math.random() - 0.5) * 10), y, W, h);
+        }
+        ctx.fillStyle = '#ff2a2a';
+        ctx.globalAlpha = 0.06;
+        ctx.fillRect(0, 0, W, H);
+        ctx.globalAlpha = 1;
+      }
+    }
+
+    function drawGame(t) {
+      if (!game.on) return;
+      game.orbs.forEach((o) => {
+        const pulse = 0.6 + 0.4 * Math.sin(t * 0.006 + o.p);
+        ctx.fillStyle = '#ffe9a8';
+        ctx.globalAlpha = 0.25 * pulse;
+        ctx.fillRect(Math.round(o.x) - 2, Math.round(o.y) - 2, 5, 5);
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = '#ffd77a';
+        ctx.fillRect(Math.round(o.x) - 1, Math.round(o.y) - 1, 2, 2);
+      });
+      ctx.globalAlpha = 1;
+    }
+
     function updatePlayer(dt, t) {
       const mood = musicRef.current;
       // Sitting on the bench: stays put until the time is up, music starts, or you take over.
@@ -947,7 +1300,7 @@ export default function PixelScene({ onSky, music, weather }) {
         }
       }
       // With music on it strolls around the screen, a little quicker for energetic songs.
-      const speed = mood ? 16 + mood.energy * 10 : 34;
+      const speed = horror ? 12 : mood ? 16 + mood.energy * 10 : 34;
       let dir = 0;
       if (keys.has('left')) dir -= 1;
       if (keys.has('right')) dir += 1;
@@ -963,7 +1316,13 @@ export default function PixelScene({ onSky, music, weather }) {
             player.x = seat.x;
             player.y = seat.seatY - 9;
             player.sitUntil = t + 6000 + Math.random() * 8000;
+            userControlUntil = 0;
             return;
+          }
+          if (player.goLamp) {
+            player.goLamp = false;
+            player.facing = 1;
+            toggleLamp();
           }
         } else dir = Math.sign(dx);
       }
@@ -974,6 +1333,11 @@ export default function PixelScene({ onSky, music, weather }) {
         const far = player.x < W / 2 ? W * (0.55 + Math.random() * 0.4) : W * (0.05 + Math.random() * 0.4);
         player.target = Math.random() < 0.2 ? null : far;
         player.wanderUntil = t + 3000 + Math.random() * 3000;
+      } else if (horror && dir === 0 && player.target === null && t > player.wanderUntil) {
+        // Trapped: walks to the edge of the screen and stays pressed against it.
+        player.target = Math.random() < 0.5 ? 2 : W - 10;
+        player.goSit = false;
+        player.wanderUntil = t + 12000 + Math.random() * 8000;
       } else if (!mood && dir === 0 && player.target === null && t > player.wanderUntil) {
         const seat = benchSeat(propItems, groundY());
         // Now and then, wander over to the bench for a rest.
@@ -1007,6 +1371,8 @@ export default function PixelScene({ onSky, music, weather }) {
         standUp();
         player.y = groundY() - SPRITE_IDLE.length;
       }
+      const lamp = lampItem();
+      if (player.grounded && lamp && Math.abs(player.x + 4 - (lamp.x + 2)) < 4) toggleLamp();
       if (player.grounded) {
         player.vy = -78;
         player.grounded = false;
@@ -1019,6 +1385,7 @@ export default function PixelScene({ onSky, music, weather }) {
       let rows = moving && player.grounded && Math.floor(player.step) % 2 === 1 ? SPRITE_WALK : SPRITE_IDLE;
       let bob = 0;
       if (player.sitting) rows = SPRITE_SIT;
+      else if (performance.now() < waveUntil) rows = Math.floor(performance.now() / 200) % 2 ? SPRITE_ARMS : SPRITE_IDLE;
       else if (mood && !moving) {
         if (mood.name === 'hype') rows = beat.index % 2 === 0 ? SPRITE_ARMS : SPRITE_WALK;
         if (mood.name === 'pop') rows = beat.index % 2 === 0 ? SPRITE_WALK : SPRITE_ARMS;
@@ -1125,19 +1492,14 @@ export default function PixelScene({ onSky, music, weather }) {
         c.x += c.v * dt * (1 + energy * 1.5);
         if (c.x > W + 10) c.x = -c.w - 10;
       });
-      if (!shooting && Math.random() < dt * 0.08) {
-        shooting = { x: Math.random() * W * 0.6, y: Math.random() * H * 0.15, life: 1 };
-      }
-      if (shooting) {
-        shooting.x += 90 * dt;
-        shooting.y += 45 * dt;
-        shooting.life -= dt * 1.4;
-        if (shooting.life <= 0) shooting = null;
-      }
+      updateMeteors(dt);
+      updateIss(t);
 
       updatePlayer(dt, t);
       updateFlies(dt, t);
       updateRain(dt, t);
+      updateGame(t);
+      updateHorror(t);
       wisps.forEach((w) => {
         w.x += w.v * dt;
         if (w.x > W) w.x = -w.w;
@@ -1152,10 +1514,13 @@ export default function PixelScene({ onSky, music, weather }) {
       drawRange('near', 1);
       if (fogOn) drawFog(0.4);
       drawGround();
+      drawGame(t);
       drawPlayer();
+      placeBubble(t);
       drawNotes();
       drawFlies(t);
       drawRain();
+      drawHorror(t);
 
       if (visible && !reduceMotion) raf = requestAnimationFrame(frame);
     }
@@ -1187,6 +1552,10 @@ export default function PixelScene({ onSky, music, weather }) {
       pointer.y = (e.clientY - rect.top) / rect.height;
       pointer.active = pointer.y >= 0 && pointer.y <= 1;
       showTip();
+      const p = { x: pointer.x * W, y: pointer.y * H };
+      const ip = issScreen();
+      const overIss = ip && Math.hypot(ip.x - p.x, ip.y - p.y) < 5;
+      host.style.cursor = pointer.active && (overIss || hitProp(p) || hitPlayer(p)) ? 'pointer' : '';
     };
 
     // Planet and bright-star names on hover.
@@ -1197,6 +1566,11 @@ export default function PixelScene({ onSky, music, weather }) {
       const ly = pointer.y * H;
       let best = null;
       let bestD = 4;
+      const ip = issScreen();
+      if (ip && Math.hypot(ip.x - lx, ip.y - ly) < 5) {
+        best = { x: ip.x, y: ip.y, name: 'International Space Station', kind: 'Click to watch live' };
+        bestD = 0;
+      }
       hoverTargets.forEach((target) => {
         const d = Math.hypot(target.x - lx, target.y - ly);
         if (d < bestD) {
@@ -1204,6 +1578,21 @@ export default function PixelScene({ onSky, music, weather }) {
           best = target;
         }
       });
+      // Otherwise, the constellation whose centre is nearest the pointer.
+      if (!best && pointer.active && night > 0.3 && overcast < 0.85) {
+        let near = null;
+        let nearD = 14;
+        constProj.forEach((cp) => {
+          if (cp.label.alt < 3) return;
+          const d = Math.hypot(cp.label.x - lx, cp.label.y - ly);
+          if (d < nearD) {
+            nearD = d;
+            near = cp;
+          }
+        });
+        if (near) best = { x: Math.round(near.label.x), y: Math.round(near.label.y), name: near.c.name, kind: 'Constellation', con: near.c };
+      }
+      hoverConst = best?.con ?? null;
       if (!best || !pointer.active) {
         tip.hidden = true;
         return;
@@ -1216,12 +1605,59 @@ export default function PixelScene({ onSky, music, weather }) {
     }
     const onLeave = () => {
       pointer.active = false;
+      hoverConst = null;
       if (tipRef.current) tipRef.current.hidden = true;
     };
+    function sceneXY(e) {
+      const rect = canvas.getBoundingClientRect();
+      return { x: ((e.clientX - rect.left) / rect.width) * W, y: ((e.clientY - rect.top) / rect.height) * H };
+    }
+
+    function hitProp(p) {
+      const gy = groundY();
+      return propItems.find((it) => {
+        if (!it.bench && !it.lamp) return false;
+        const b = propBox(it, gy);
+        return p.x >= b.x0 - 1 && p.x <= b.x1 + 1 && p.y >= b.y0 - 2 && p.y <= b.y1 + 1;
+      });
+    }
+
+    function hitPlayer(p) {
+      return p.x >= player.x - 1 && p.x <= player.x + 9 && p.y >= player.y - 1 && p.y <= player.y + 12;
+    }
+
     const onClick = (e) => {
-      if (e.target.closest('a, button, input, textarea')) return;
+      if (e.target.closest('a, button, input, textarea, select, .pv')) return;
       const rect = canvas.getBoundingClientRect();
       if (e.clientY < rect.top || e.clientY > rect.bottom) return;
+      const p = sceneXY(e);
+      const ip = issScreen();
+      if (ip && Math.hypot(ip.x - p.x, ip.y - p.y) < 5) {
+        window.open(ISS_LIVE_URL, '_blank', 'noopener');
+        return;
+      }
+      if (hitPlayer(p)) {
+        const pool = horror ? HORROR_CLICKS : LINES;
+        say(pool[Math.floor(Math.random() * pool.length)], horror ? 3500 : 3000);
+        return;
+      }
+      // Bench and lamp: walk over, then sit or flip the switch.
+      const prop = hitProp(p);
+      if (prop) {
+        standUp();
+        player.wanderUntil = performance.now() + 8000;
+        userControlUntil = performance.now() + 3000;
+        if (prop.bench) {
+          player.target = benchSeat(propItems, groundY()).x;
+          player.goSit = true;
+          player.goLamp = false;
+        } else {
+          player.target = prop.x - 6;
+          player.goLamp = true;
+        }
+        return;
+      }
+      player.goLamp = false;
       standUp();
       player.target = ((e.clientX - rect.left) / rect.width) * W - 4;
       player.wanderUntil = performance.now() + 8000;
@@ -1232,7 +1668,28 @@ export default function PixelScene({ onSky, music, weather }) {
       ({ ArrowLeft: 'left', a: 'left', A: 'left', ArrowRight: 'right', d: 'right', D: 'right' })[e.key];
     const typing = (e) => e.target.closest?.('input, textarea, select, [contenteditable]');
     const onKeyDown = (e) => {
+      if (e.key === 'Shift') shiftHeld = true;
       if (!visible || typing(e)) return;
+      const key = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+      konami = key === KONAMI[konami] ? konami + 1 : key === KONAMI[0] ? 1 : 0;
+      if (konami === KONAMI.length) {
+        konami = 0;
+        startGame();
+      }
+      if (game.on && (e.key === 'ArrowDown' || e.key === ' ')) e.preventDefault();
+      if (key.length === 1) {
+        const now = performance.now();
+        typed = (now - typedAt > 1500 ? '' : typed) + key;
+        typedAt = now;
+        if (horror && /help$/.test(typed)) {
+          typed = '';
+          say('you can\u2019t. he\u2019d notice. just keep the tab open.', 4500);
+        } else if (/(hi|hey|hello)$/.test(typed)) {
+          typed = '';
+          waveUntil = now + 1600;
+          say('Hey!', 2000);
+        }
+      }
       const k = keyName(e);
       if (k) {
         keys.add(k);
@@ -1247,6 +1704,7 @@ export default function PixelScene({ onSky, music, weather }) {
       }
     };
     const onKeyUp = (e) => {
+      if (e.key === 'Shift') shiftHeld = false;
       const k = keyName(e);
       if (k) keys.delete(k);
     };
@@ -1280,6 +1738,8 @@ export default function PixelScene({ onSky, music, weather }) {
   return (
     <>
       <canvas ref={canvasRef} className="pixel-scene" aria-hidden="true" />
+      <div ref={sayRef} className="say" hidden aria-live="polite" />
+      <div ref={hudRef} className="game-hud" hidden aria-live="polite" />
       <div ref={tipRef} className="sky-tip" hidden>
         <strong />
         <span />

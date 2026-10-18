@@ -6,11 +6,13 @@
 // read its value with getPreview() where the feature decides what to show.
 // The settings panel builds itself from this list.
 
+import { SHOWERS } from './meteors';
+
 const listeners = new Set();
 let state = seedFromUrl();
 
 function seedFromUrl() {
-  const empty = { time: null, weather: null, cloud: null, moon: null, mood: null };
+  const empty = { time: null, weather: null, cloud: null, moon: null, mood: null, meteors: null, constellations: null, iss: null, horror: null };
   if (typeof window === 'undefined') return empty;
   const q = new URLSearchParams(window.location.search);
   const raw = q.get('time');
@@ -21,7 +23,11 @@ function seedFromUrl() {
     time: time && !Number.isNaN(time.getTime()) ? time : null,
     weather: q.get('weather'),
     moon: q.get('moon'),
-    mood: q.get('mood')
+    mood: q.get('mood'),
+    meteors: q.get('meteors'),
+    constellations: q.get('constellations'),
+    iss: q.get('iss'),
+    horror: q.get('horror')
   };
 }
 
@@ -35,7 +41,7 @@ export function setPreview(patch) {
 }
 
 export function resetPreview() {
-  setPreview({ time: null, weather: null, cloud: null, moon: null, mood: null });
+  setPreview({ time: null, weather: null, cloud: null, moon: null, mood: null, meteors: null, constellations: null, iss: null, horror: null });
 }
 
 export function subscribePreview(fn) {
@@ -71,5 +77,9 @@ export const PREVIEW_CONTROLS = [
     label: 'Music',
     type: 'choice',
     options: [['hype', 'Hype (rap, rock, EDM)'], ['pop', 'Pop'], ['chill', 'Chill (R&B, lo-fi)'], ['calm', 'Calm (classical)']]
-  }
+  },
+  { key: 'meteors', label: 'Meteor shower', type: 'choice', options: SHOWERS.map((sh) => [sh.key, sh.name]) },
+  { key: 'constellations', label: 'Constellation lines', type: 'choice', options: [['all', 'Show all']] },
+  { key: 'iss', label: 'Space station', type: 'choice', options: [['pass', 'Passing overhead']] },
+  { key: 'horror', label: 'Late night (2\u20134 am)', type: 'choice', options: [['on', 'Horror mode']] }
 ];

@@ -182,8 +182,10 @@ export function makeLighting(items, groundY, light) {
   // dim: 0 in full daylight, 1 once it is dark (follows the sun's altitude).
   const darken = Math.min(0.9, 0.06 + 0.8 * light.dim + 0.45 * light.wet);
   const lampItem = items.find((it) => it.lamp);
-  const lampOn = Boolean(lampItem) && light.night > 0.08;
-  const lamp = { x: lampItem ? lampItem.x + 2 : -999, y: groundY - LAMP.length + 1, on: lampOn };
+  // lampForced (true/false) comes from someone switching the lamp by hand.
+  const lampOn = Boolean(lampItem) && (light.lampForced ?? light.night > 0.08);
+  const glow = lampOn ? Math.max(light.night, 0.5) : 0;
+  const lamp = { x: lampItem ? lampItem.x + 2 : -999, y: groundY - LAMP.length + 1, on: lampOn, glow };
   const reach = 22;
   const cache = new Map();
   const colourAt = (hex, x, y, strength = 1) => {
@@ -199,7 +201,7 @@ export function makeLighting(items, groundY, light) {
     c = mix(c, ambient, darken * strength);
     if (lampOn) {
       const d = Math.hypot(x - lamp.x, y - lamp.y);
-      if (d < reach) c = mix(c, lampRgb, (1 - d / reach) ** 2 * 0.6 * light.night);
+      if (d < reach) c = mix(c, lampRgb, (1 - d / reach) ** 2 * 0.6 * glow);
     }
     return css(c);
   };
@@ -212,14 +214,14 @@ export function drawProps(ctx, items, groundY, light) {
   // Lamp glow and its pool of light on the ground, under everything else.
   if (lamp.on) {
     [[16, 0.05], [11, 0.07], [6, 0.11]].forEach(([r, a]) => {
-      ctx.globalAlpha = a * light.night;
+      ctx.globalAlpha = a * lamp.glow;
       ctx.fillStyle = light.lampColour;
       for (let y = -r; y <= r; y += 1) {
         const half = Math.round(Math.sqrt(r * r - y * y));
         ctx.fillRect(lamp.x - half, lamp.y + y, half * 2 + 1, 1);
       }
     });
-    ctx.globalAlpha = 0.22 * light.night;
+    ctx.globalAlpha = 0.22 * lamp.glow;
     ctx.fillRect(lamp.x - 10, groundY, 21, 1);
     ctx.fillRect(lamp.x - 6, groundY + 1, 13, 1);
     ctx.globalAlpha = 1;
@@ -252,4 +254,9 @@ export function benchSeat(items, groundY) {
   const bench = items.find((it) => it.bench);
   if (!bench) return null;
   return { x: bench.x + 3, seatY: groundY - BENCH.length + 3 };
+}
+
+// Clickable box of a prop in scene pixels (bench and lamp are interactive).
+export function propBox(item, groundY) {
+  return { x0: item.x, x1: item.x + item.sprite[0].length, y0: groundY - item.sprite.length, y1: groundY };
 }

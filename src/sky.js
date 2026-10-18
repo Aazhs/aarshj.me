@@ -138,10 +138,14 @@ export function skyState(date = new Date(), { lat, lng } = PUNE) {
   let sun = position(sunCoords(d), d, lat, lng);
   let moon = position(moonCoords(d), d, lat, lng);
   let illum = moonIllumination(d);
-  // Moon previews: show a full moon high in a night sky, unless a time is also given.
+  // Moon, meteor and constellation previews need a dark sky: switch to night
+  // unless a time is also being previewed. Moon previews also place a full moon high up.
   const forced = previewMoon();
-  if (forced && !previewTime()) {
+  const pv = getPreview();
+  if (!previewTime() && (forced || pv.meteors || pv.constellations || pv.horror)) {
     sun = { azimuth: Math.PI * 0.9, altitude: -RAD * 30 };
+  }
+  if (forced && !previewTime()) {
     moon = { azimuth: RAD * 25, altitude: RAD * (forced === 'low' ? 3 : 38) };
     if (forced !== 'low') illum = { fraction: 1, phase: 0.5 };
   }

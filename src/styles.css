@@ -389,6 +389,66 @@ kbd {
   box-shadow: 0 3px 0 var(--ridge);
 }
 
+/* Character speech bubble. */
+.say {
+  position: absolute;
+  z-index: 3;
+  max-width: 220px;
+  padding: 6px 10px;
+  transform: translate(-50%, -100%);
+  pointer-events: none;
+  font-size: var(--t-sm);
+  line-height: 1.35;
+  text-align: center;
+  color: var(--night);
+  background: var(--moon);
+  box-shadow: 0 0 0 2px var(--panel-edge);
+}
+
+.say[hidden] {
+  display: none;
+}
+
+/* 2-4 am: the trapped copy whispers. */
+.say.horror {
+  color: #ff5a4f;
+  background: #0b0306;
+  box-shadow: 0 0 0 2px #3a0b10;
+  font-family: var(--display);
+  letter-spacing: 0.02em;
+  animation: shiver 0.18s steps(2) infinite;
+}
+
+@keyframes shiver {
+  50% {
+    transform: translate(calc(-50% + 1px), calc(-100% - 1px));
+  }
+}
+
+.sky-line.sky-horror {
+  color: #ff5a4f;
+  font-family: var(--display);
+}
+
+/* Konami mini-game score. */
+.game-hud {
+  position: absolute;
+  top: 92px;
+  left: 50%;
+  z-index: 3;
+  transform: translateX(-50%);
+  padding: 6px 12px;
+  font-family: var(--display);
+  font-variant-numeric: tabular-nums;
+  color: var(--night);
+  background: var(--gold);
+  box-shadow: 0 0 0 2px var(--panel-edge);
+}
+
+.game-hud[hidden] {
+  display: none;
+}
+
 /* Planet and star names on hover. */
 .sky-tip {
   position: absolute;
